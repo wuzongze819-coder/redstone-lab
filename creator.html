@@ -1,0 +1,1503 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>数字造物者：红石到现代计算机</title>
+<style>
+:root{
+  --bg:#1e1e1e; --bg2:#313233; --panel:#c6c6c6; --edge:#181818; --hi:#8b8b8b;
+  --on:#ff2200; --glow:#ff5533; --off:#4a0d00;
+  --paper:#e6d5ac; --paper2:#d9c491; --ink:#1a365d; --gold:#b7791f;
+  --good:#3fae2a; --bad:#c0392b;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  background:var(--bg); color:#e8e8e8;
+  font-family:"VT323","Minecraftia","Courier New","PingFang SC","Microsoft YaHei",monospace;
+  overflow-x:hidden; user-select:none;
+}
+::-webkit-scrollbar{display:none}
+html{scrollbar-width:none}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;min-height:44px}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+svg{display:block}
+.crisp{shape-rendering:crispEdges}
+.small{font-size:13px;opacity:.85}
+
+#hud{position:sticky;top:0;z-index:60;display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  padding:8px 12px;background:#101010;border-bottom:4px solid #000;box-shadow:0 4px 0 #2c2c2c}
+.brand{display:flex;align-items:center;gap:9px;font-size:20px;letter-spacing:1px;color:#fff;text-shadow:2px 2px 0 #000}
+.brand .rd{width:14px;height:14px;background:var(--on);box-shadow:0 0 8px var(--glow);animation:pulse 1.6s infinite}
+@keyframes pulse{50%{opacity:.55}}
+.hud-right{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.seg{display:flex;border:3px solid #000}
+.seg button{padding:6px 14px;background:#3a3a3a;color:#bbb;min-height:44px;transition:background .15s ease-in-out}
+.seg button.on{background:var(--on);color:#fff;text-shadow:1px 1px 0 #700}
+.seg button:disabled{opacity:.4;cursor:not-allowed}
+
+.mc-btn{padding:8px 18px;background:#6f6f6f;color:#fff;text-shadow:2px 2px 0 #3a3a3a;
+  border:3px solid var(--edge);box-shadow:inset 2px 2px 0 #a5a5a5,inset -2px -2px 0 #4a4a4a;
+  transition:filter .15s ease-in-out}
+.mc-btn:hover{filter:brightness(1.18)}
+.mc-btn:active{transform:translateY(2px);box-shadow:inset -2px -2px 0 #a5a5a5,inset 2px 2px 0 #4a4a4a}
+.mc-btn.g{background:#5b8c2a;box-shadow:inset 2px 2px 0 #8bc34a,inset -2px -2px 0 #3d631c}
+.mc-btn.r{background:#a03028;box-shadow:inset 2px 2px 0 #d06050,inset -2px -2px 0 #6a1c16}
+.mc-btn:disabled{opacity:.45;cursor:not-allowed;filter:none}
+.mc-panel{background:var(--panel);color:#222;border:4px solid var(--edge);
+  box-shadow:inset 3px 3px 0 #e8e8e8,inset -3px -3px 0 #8b8b8b;padding:12px}
+.paper{background:var(--paper);color:var(--ink);border:4px solid var(--edge);
+  box-shadow:inset 0 0 0 3px var(--paper2);padding:14px}
+.paper h3{color:var(--gold);font-size:18px;letter-spacing:1px;margin-bottom:8px;text-shadow:1px 1px 0 #fff3d6}
+.paper h4{color:var(--ink);margin:10px 0 4px;font-size:15px}
+.paper p,.paper li{font-size:14px;line-height:1.55}
+.paper ul{padding-left:18px}
+.formula{background:#f4ead0;border:2px dashed var(--gold);padding:6px 10px;margin:6px 0;font-size:15px;color:#7a2d0c;text-align:center}
+
+.screen{display:none}
+.screen.on{display:block;animation:scrIn .35s ease-in-out}
+@keyframes scrIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+#map-wrap{max-width:1060px;margin:16px auto;padding:0 12px}
+#map-svg{width:100%;height:auto}
+.trace{stroke:var(--off);stroke-width:7;fill:none;stroke-linecap:square;stroke-linejoin:round;transition:stroke .3s}
+.trace.lit{stroke:var(--on);filter:drop-shadow(0 0 6px var(--glow));stroke-dasharray:12 12;animation:traceFlow 1.2s linear infinite}
+@keyframes traceFlow{to{stroke-dashoffset:-24}}
+.node{cursor:pointer;transition:transform .15s ease-in-out;transform-box:fill-box;transform-origin:center}
+.node:hover{transform:scale(1.07)}
+.node.lock{cursor:not-allowed;filter:grayscale(.85) brightness(.55)}
+.node.clear .nring{stroke:var(--good)}
+.nlabel{font-size:15px;fill:#fff;paint-order:stroke;stroke:#000;stroke-width:4px;text-anchor:middle;pointer-events:none}
+.nlabel.dim{fill:#888}
+.map-title{font-size:26px;fill:#fff;text-anchor:middle;paint-order:stroke;stroke:#000;stroke-width:5px}
+.map-sub{font-size:14px;fill:#ffb066;text-anchor:middle;paint-order:stroke;stroke:#000;stroke-width:4px}
+
+.stage-wrap{display:grid;grid-template-columns:minmax(0,1fr) 384px;gap:14px;max-width:1240px;margin:14px auto;padding:0 12px;align-items:start}
+@media(max-width:1024px){
+  .stage-wrap{grid-template-columns:1fr}
+  .lab{min-height:0}
+  #hud .brand{font-size:16px}
+  .hint-fab{right:10px;bottom:10px}
+}
+.lab{position:relative;background:
+  linear-gradient(rgba(255,255,255,.03) 2px,transparent 2px),
+  linear-gradient(90deg,rgba(255,255,255,.03) 2px,transparent 2px),var(--bg2);
+  background-size:32px 32px;border:4px solid #000;box-shadow:inset 0 0 0 3px #4a4a4b;
+  padding:10px;min-height:460px}
+.lab-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.lab-title{font-size:19px;color:#ffd976;text-shadow:2px 2px 0 #000}
+.lab-goal{font-size:14px;color:#cfe3ff;background:#00000055;padding:4px 10px;border-left:4px solid var(--gold)}
+.rail{display:flex;flex-direction:column;gap:12px}
+.tabs{display:flex;gap:4px;flex-wrap:wrap}
+.tabs button{padding:6px 10px;background:#b8a67a;color:#4a3a18;border:2px solid #8a6d3b;min-height:36px;font-size:13px;transition:background .15s}
+.tabs button.on{background:var(--gold);color:#fff;text-shadow:1px 1px 0 #6a4c0e}
+
+.comp{position:absolute;perspective:700px;touch-action:manipulation}
+.comp .inner{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .6s ease-in-out}
+body.sci .comp .inner{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;backface-visibility:hidden;display:flex;align-items:center;justify-content:center}
+.face.back{transform:rotateY(180deg)}
+.face svg{width:100%;height:100%}
+.comp.clickable{cursor:pointer}
+.comp.clickable:hover{filter:brightness(1.2)}
+.comp.ghost{opacity:.28;filter:grayscale(.6);pointer-events:none}
+.comp.sel{outline:3px dashed #ffe08a;outline-offset:3px}
+.comp .tag{position:absolute;left:50%;top:100%;transform:translateX(-50%);white-space:nowrap;font-size:12px;color:#ffd976;text-shadow:1px 1px 0 #000;pointer-events:none;margin-top:3px}
+
+.wires{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+.wires path,.wires polyline{fill:none;stroke:var(--off);stroke-width:6;stroke-linecap:square;stroke-linejoin:round;transition:stroke .18s,filter .18s}
+.wires .w1{stroke:var(--on);filter:drop-shadow(0 0 5px var(--glow))}
+.wires .jump{stroke-width:4;stroke-dasharray:8 6}
+
+.sig1{filter:drop-shadow(0 0 8px var(--glow))}
+
+.tt{width:100%;border-collapse:collapse;font-size:14px}
+.tt th,.tt td{border:2px solid #8a6d3b;padding:5px 6px;text-align:center;color:var(--ink)}
+.tt th{background:var(--paper2);color:#5a420e}
+.tt tr{transition:background .15s}
+.tt tr.pass td{background:#cfe8b0}
+.tt tr.fail td{background:#f2c1b6}
+.tt tr.cur td{outline:3px solid var(--gold);outline-offset:-3px}
+.tt .mk{font-weight:bold}
+.mk.ok{color:var(--good)} .mk.no{color:var(--bad)}
+
+#toast-layer{position:fixed;top:74px;left:50%;transform:translateX(-50%);z-index:99;display:flex;flex-direction:column;gap:8px;pointer-events:none;width:min(92vw,520px)}
+.toast{background:#241202;border:3px solid var(--gold);color:#ffd976;padding:12px 18px;text-align:center;
+  box-shadow:0 0 24px rgba(255,180,0,.4);animation:tin .35s cubic-bezier(.2,1.6,.4,1)}
+.toast b{color:#fff;font-size:17px}
+@keyframes tin{from{transform:translateY(-30px) scale(.7);opacity:0}}
+
+.overlay{position:fixed;inset:0;z-index:90;display:none;align-items:center;justify-content:center;background:rgba(8,8,14,.82)}
+.overlay.on{display:flex}
+.beam{position:absolute;left:50%;bottom:0;width:150px;height:100vh;transform:translateX(-50%);
+  background:linear-gradient(to top,rgba(150,225,255,.95),rgba(150,225,255,0) 85%);
+  clip-path:polygon(42% 0,58% 0,100% 100%,0 100%);animation:beamup 1.1s ease-out both}
+@keyframes beamup{from{transform:translateX(-50%) scaleY(0);transform-origin:bottom}to{transform:translateX(-50%) scaleY(1)}}
+.cert{position:relative;z-index:2;width:min(92vw,560px);text-align:center;animation:tin .5s cubic-bezier(.2,1.6,.4,1)}
+.cert h2{color:var(--gold);font-size:26px;margin:6px 0}
+.cert .cname{font-size:22px;color:#7a2d0c;border-bottom:3px solid var(--gold);display:inline-block;padding:0 20px;margin:8px 0}
+.modal-card{width:min(92vw,560px);max-height:82vh;overflow:auto;animation:tin .3s ease-out}
+
+.sb-wrap{max-width:1240px;margin:14px auto;padding:0 12px}
+#sb-stage{position:relative;width:100%;max-width:960px;aspect-ratio:12/8;margin:0 auto;
+  background:linear-gradient(rgba(255,255,255,.04) 2px,transparent 2px),
+  linear-gradient(90deg,rgba(255,255,255,.04) 2px,transparent 2px),#262625;
+  background-size:calc(100%/12) calc(100%/8);border:4px solid #000;box-shadow:inset 0 0 0 3px #4a4a4b}
+#hotbar{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:14px auto;max-width:960px}
+.slot{width:64px;height:74px;background:#8b8b8b;border:3px solid #181818;box-shadow:inset 2px 2px 0 #c6c6c6,inset -2px -2px 0 #555;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:2px;transition:transform .15s}
+.slot svg{width:40px;height:40px}
+.slot span{font-size:11px;color:#fff;text-shadow:1px 1px 0 #000;line-height:1}
+.slot.on{outline:3px solid #ffe08a;transform:translateY(-4px)}
+.check-list{list-style:none}
+.check-list li{padding:4px 0 4px 26px;position:relative;font-size:14px}
+.check-list li::before{content:"";position:absolute;left:2px;top:8px;width:12px;height:12px;border:2px solid #8a6d3b;background:#f4ead0}
+.check-list li.done::before{background:var(--good);box-shadow:inset 0 0 0 2px #f4ead0}
+
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.center{text-align:center}
+.mt8{margin-top:8px}.mt12{margin-top:12px}
+.stage-nav{display:flex;gap:8px;justify-content:space-between;margin-top:10px;flex-wrap:wrap}
+.hint-fab{position:fixed;right:14px;bottom:14px;z-index:70}
+.big-dec{font-size:34px;color:#ffd976;text-shadow:2px 2px 0 #000;text-align:center;letter-spacing:2px}
+.bits{display:flex;gap:8px;justify-content:center;font-size:26px;flex-wrap:wrap}
+.bits b{background:#111;border:2px solid #555;padding:2px 10px;color:#7fd0ff}
+.bits b.on{color:var(--on);border-color:var(--on);text-shadow:0 0 8px var(--glow)}
+.qa-block{display:none}.qa-block.on{display:block}
+.flipx .inner{transform:scaleX(-1)}
+body.sci .flipx .inner{transform:scaleX(-1) rotateY(180deg)}
+.zlabel{font-size:22px;fill:#fff;paint-order:stroke;stroke:#000;stroke-width:4px}
+.zlabel2{font-size:17px;fill:#ffe8a0;paint-order:stroke;stroke:#000;stroke-width:4px}
+.zoom-scene{position:absolute;inset:0;opacity:0;transition:opacity .5s ease-in-out;pointer-events:none}
+.zoom-scene.on{opacity:1;pointer-events:auto}
+.electron{animation:eflow 1.4s linear infinite}
+@keyframes eflow{from{transform:translateX(0)}to{transform:translateX(300px)}}
+.waterflow{stroke:#4aa3ff;fill:none;stroke-linecap:round;transition:stroke-width .3s}
+.pipe{stroke:#3a5a7a;stroke-width:26;fill:none;stroke-linecap:round}
+input[type=range]{width:100%;height:44px;accent-color:var(--on)}
+.shake{animation:shake .4s}
+@keyframes shake{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.scene{position:relative;min-height:420px}
+.paper-t{font-size:17px;color:var(--gold);margin-bottom:8px;text-shadow:1px 1px 0 #fff3d6}
+.qa-item{border-bottom:2px dashed #b8a67a;padding:2px 0}
+.qa-q{cursor:pointer;font-size:14px;color:var(--ink);padding:5px 0;display:flex;align-items:center;gap:6px}
+.qa-q span{background:var(--gold);color:#fff;padding:0 6px;font-size:12px;flex:none}
+.qa-a{display:none;font-size:13px;color:#4a5568;padding:2px 0 8px}
+.qa-item.open .qa-a{display:block}
+.ach-unlock{display:flex;gap:14px;align-items:center}
+.ach-unlock .ic{width:64px;height:64px;flex:none}
+.ach-unlock .t{font-size:20px;color:var(--gold)}
+.ach-unlock .d{font-size:13px;color:#4a5568;margin-top:4px}
+.toast.bad{border-color:var(--bad);color:#ffb0a0}
+</style>
+</head>
+<body>
+<div id="hud">
+  <div class="brand"><span class="rd"></span>数字造物者<span class="small">红石 → 现代计算机</span></div>
+  <div class="hud-right">
+    <div class="seg" id="mode-seg">
+      <button data-m="adventure" class="on">冒险闯关</button>
+      <button data-m="creative" id="btn-creative">创造沙盒</button>
+    </div>
+    <button class="mc-btn" id="btn-lens">红石透镜：游戏</button>
+    <button class="mc-btn" id="btn-bag">背包</button>
+    <button class="mc-btn" id="btn-mute">音效：开</button>
+  </div>
+</div>
+
+<main>
+  <section id="screen-map" class="screen on">
+    <div id="map-wrap"><svg id="map-svg" viewBox="0 0 1000 580" class="crisp"></svg></div>
+  </section>
+
+  <section id="screen-stage" class="screen">
+    <div class="stage-wrap">
+      <div class="lab" id="lab"></div>
+      <aside class="rail">
+        <div class="paper" id="rail-qa"></div>
+        <div class="paper" id="rail-tt"></div>
+      </aside>
+    </div>
+    <div class="stage-nav" style="max-width:1240px;margin:0 auto;padding:0 12px 22px">
+      <button class="mc-btn" id="btn-back">← 返回地图</button>
+      <button class="mc-btn r" id="btn-reset-lab">清空重试</button>
+      <button class="mc-btn g" id="btn-next">下一关 →</button>
+    </div>
+    <button class="mc-btn hint-fab" id="btn-hint">史蒂夫求助</button>
+  </section>
+
+  <section id="screen-sandbox" class="screen">
+    <div class="sb-wrap">
+      <div class="lab-head">
+        <span class="lab-title" id="sb-title">创造模式 · 全功能红石沙盒</span>
+        <span class="lab-goal" id="sb-goal">自由拼搭：点选零件放入网格，再用「连线」工具把元件接起来。</span>
+      </div>
+      <div id="sb-stage"><svg class="wires" id="sb-wires" viewBox="0 0 1200 800" preserveAspectRatio="none"></svg></div>
+      <div id="hotbar"></div>
+      <div class="row" style="justify-content:center;margin-top:10px">
+        <button class="mc-btn" id="btn-back2">← 返回地图</button>
+        <button class="mc-btn r" id="sb-clear">清空画布</button>
+        <button class="mc-btn g" id="btn-cap">终极挑战：半加器</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div id="toast-layer"></div>
+<div class="overlay" id="ov-beam">
+  <div class="beam"></div>
+  <div class="cert paper" id="cert-body"></div>
+</div>
+<div class="overlay" id="ov-modal"><div class="modal-card paper" id="modal-body"></div></div>
+
+<script>
+/* ================= 工具 ================= */
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+function h(tag,cls,html){const e=document.createElement(tag);if(cls)e.className=cls;if(html!=null)e.innerHTML=html;return e}
+
+/* ================= 像素图标工厂 ================= */
+function px(map,pal,vb){
+  vb=vb||16;let s='';
+  for(let y=0;y<map.length;y++){const r=map[y];
+    for(let x=0;x<r.length;x++){const c=pal[r[x]];
+      if(c)s+='<rect x="'+x+'" y="'+y+'" width="1.04" height="1.04" fill="'+c+'"/>'}}
+  return '<svg viewBox="0 0 '+vb+' '+vb+'" class="crisp" xmlns="http://www.w3.org/2000/svg">'+s+'</svg>';
+}
+const P={
+  k:'#181818',w:'#ffffff',g:'#8b8b8b',G:'#5a5a5a',r:'#ff2200',R:'#4a0d00',o:'#ff8800',
+  b:'#8b5a2b',B:'#5e3a17',y:'#ffd976',e:'#3ddc84',s:'#c78d5e',S:'#8a5a3a',H:'#3a2a1a',
+  u:'#3a3ac8',d:'#8a5a2b',D:'#6b4420',n:'#5b8c2a',l:'#ffe8a0',L:'#6a5a28',
+  i:'#d8d8d8',I:'#9a9a9a',c:'#b87333',p:'#3a6ea5',t:'#3aa8a0',v:'#4a5aa8',x:'#2a2a2a',m:'#1a1a1a'
+};
+function slab(){return [
+"..kkkkkkkkkkkk..",
+".kggggggggggggk.",
+".kggggggggggggk.",
+".kggggggggggggk.",
+".kggggggggggggk.",
+".kggggggggggggk.",
+".kggggggggggggk.",
+".kggggggggggggk.",
+".kggggggggggggk.",
+".kggggggggggggk.",
+".kggggggggggggk.",
+".kggggggggggggk.",
+".kggggggggggggk.",
+".kggggggggggggk.",
+"..kkkkkkkkkkkk..",
+"................"]}
+function gateIcon(txt,extra){
+  return '<svg viewBox="0 0 16 16" class="crisp" xmlns="http://www.w3.org/2000/svg">'
+    +px(slab(),P).replace(/<\/?svg[^>]*>/g,'')
+    +'<text x="8" y="10.6" font-size="'+(txt.length>2?4.6:6.4)+'" font-family="Courier New,monospace" font-weight="bold" fill="#ffd976" text-anchor="middle" stroke="#000" stroke-width=".35" paint-order="stroke">'+txt+'</text>'
+    +(extra||'')+'</svg>';
+}
+const IC={};
+IC.grass=px([
+"nnnnnnnnnnnnnnnn","nnNnnnnnNnnnnNnn","nnnnnnnnnnnnnnnn","nNnnnnNnnnnNnnnn",
+"nnnnnnnnnnnnnnnn","dddddddddddddddd","ddDddddddDdddddd","ddddddDddddddddd",
+"dDdddddddddDdddd","ddddddDddddddddd","ddddddddddDddddd","ddDddddddddddddd",
+"ddddddDdddddDddd","dddddddddddddddd","ddDdddDddddDddDd","dddddddddddddddd"],P);
+IC.steve=px([
+"................","..kkkkkkkkkkkk..","..kHHHHHHHHHHk..","..kHHHHHHHHHHk..",
+"..kHssssssssHk..","..kssssssssssk..","..kswssssswsk...","..ksussssssusk..",
+"..kssssssssssk..","..ksssSSSSsssk..","..kssssssssssk..","..kkkkkkkkkkkk..",
+"..tttttttttttt..","..tttttttttttt..","..tttttttttttt..","..vvvvv..vvvvv.."],P);
+IC.lever=px([
+"................",".......yy.......",".......yy.......","......bb........",
+"......bb........",".....bb.........",".....bb.........","....bb..........",
+"....bb..........","..kkkkkkkkkk....","..kggggggggk....","..kgGgGggGgk....",
+"..kggggggggk....","..kggGgggGgk....","..kkkkkkkkkk....","................"],P);
+IC.torch=px([
+"................","......rrrr......",".....rorror.....",".....orrro......",
+"......rRr.......",".......bb.......",".......bb.......",".......bb.......",
+".......bb.......",".......bb.......",".......bb.......",".......bb.......",
+".......bb.......",".......bb.......",".......bb.......","................"],P);
+IC.torchOff=px([
+"................","......RRRR......",".....RRRRR......",".....RRRRR......",
+"......RRR.......",".......bb.......",".......bb.......",".......bb.......",
+".......bb.......",".......bb.......",".......bb.......",".......bb.......",
+".......bb.......",".......bb.......",".......bb.......","................"],P);
+IC.repeater=px([
+"................","................","......rr........","......rr........",
+".......bb.......","...........rr...","...........rr...","...........bb...",
+"..kkkkkkkkkkkkk.",".kGGGGGGGGGGGGk.",".kGggggggggggGk.",".kGggggggggggGk.",
+"..kkkkkkkkkkkkk.","................","................","................"],P);
+IC.lampOn=px([
+".kkkkkkkkkkkkkk.","kllylllllylllylk","kllllllolllllllk","kylllloooolllllk",
+"kllllooooooolllk","kllooooyyoooollk","kllooooyyoooollk","kllooooyyoooollk",
+"kllllooooooolllk","kylllloooolllllk","kllllllolllllllk","kllylllllylllylk",
+".kkkkkkkkkkkkkk.","................","................","................"],P);
+IC.lampOff=px([
+".kkkkkkkkkkkkkk.","kLLxLLLLLxLLLxLk","kLLLLLLxLLLLLLLk","kxLLLLxxxLLLLLLk",
+"kLLLLxxxxxxLLLLk","kLLxxxxxxxxxLLLk","kLLxxxxxxxxxxLLk","kLLxxxxxxxxxLLLk",
+"kLLLLxxxxxxLLLLk","kxLLLLxxxLLLLLLk","kLLLLLLxLLLLLLLk","kLLxLLLLLxLLLxLk",
+".kkkkkkkkkkkkkk.","................","................","................"],P);
+IC.door=px([
+"................","...kkkkkkkkkk...","..kiiiiiiiiiik..","..kiiiIIIIiiik..",
+"..kiiiIIIIiiik..","..kiiiiiiiiiik..","..kiiIIIIIIiik..","..kiiiiiiiiiik..",
+"..kiiiiiiikkik..","..kiiiiiiikkik..","..kiiiiiiiiiik..","..kiiIIIIIIiik..",
+"..kiiiiiiiiiik..","..kiiiiiiiiiik..","...kkkkkkkkkk...","................"],P);
+IC.battery=px([
+".kkkkkkkkkkkkkk.","krrrrrrrrrrrrrrk","krwwrrrrrrwwrrrk","krwwrrrrrrwwrrrk",
+"krrrrrrwwwwrrrrk","krrrrrrwwwwrrrrk","krwwrrrrrrwwrrrk","krwwrrrrrrwwrrrk",
+"krrrrrrrrrrrrrrk","krrrrrrrrrrrrrrk","krrrrrrrrrrrrrrk","krrrrrrrrrrrrrrk",
+".kkkkkkkkkkkkkk.","................","................","................"],P);
+IC.dust=px([
+"................","................","................",".....rr.........",
+"....rRRr........","...rRrrRr..rr...","...rRrrRr.rRRr..","....rRRr.rRrrRr.",
+".....rr..rRrrRr.",".........rRRr...","..........rr....","................",
+"................","................","................","................"],P);
+IC.clock=px([
+"................","................","..kkkkkkkkkkk...",".kgggggggggggk..",
+".kgRRRgggRRRggk.",".kgRrrRggRrrRgk.",".kgRRRgggRRRggk.",
+".kggggggggggggk.",".kggRRRgggRRRgk.",".kggRrrRgRrrRgk.",".kggRRRgggRRRgk.",
+".kggggggggggggk.","..kkkkkkkkkkkk..","................","................"],P);
+IC.beacon=px([
+"................",".......yy.......","......kyyk......",".....kyyyyk.....",
+"....kywwwwwyk...","...kywwwwwwwyk..","..kywwkkwkkwyk..","..kywwwwwwwyk..",
+"...kkyyyyyyykk..","..kggggggggggk..","..kgGGGGGGGGgk..","..kkkkkkkkkkkk..",
+"................","................","................","................"],P);
+IC.emerald=px([
+"................","......kkkk......","....kkeeeekk....","...keeeleeeek...",
+"..keeeleeeewk...","..keelleeeewek..","..keelleeeewek..","..keeeleeeewek..",
+"...keeeeeewwk...","....kkeewwkk....","......kkkk......","................",
+"................","................","................","................"],P);
+IC.book=px([
+"................","..kkkkkkkkkkk...",".kBBBBBBBBBBBk..",".kBwBwBwBwBwBBk.",
+".kBBBBBBBBBBBk..",".kBwBwBwBwBwBBk.",".kBBBBBBBBBBBk..",".kBBBBBBBBBBBk..",
+".kBBBBBBByBBBBk.",".kBBBBBBByBBBBk.",".kBBBBBBBByBBBk.",".kBBBBBBBBBByBk.",
+".kkkkkkkkkkkyk..","...........kk...","................","................"],P);
+IC.chip=px([
+"....i..i..i.....","...kkkkkkkkkk...","..kkxxxxxxxkk...",".ikxcccccccxki..",
+".ikxcggggggcxki.",".ikxcgyyyygcxki.",".ikxcgyyyygcxki.",".ikxcggggggcxki.",
+".ikxcccccccxki..","..kkxxxxxxxkk...","...kkkkkkkkkk...","....i..i..i.....",
+"................","................","................","................"],P);
+IC.and=gateIcon('&'); IC.or=gateIcon('≥1'); IC.not=gateIcon('1','<rect x="12.4" y="7.2" width="1.8" height="1.8" fill="#ffd976" stroke="#000" stroke-width=".3"/>');
+IC.nand=gateIcon('&','<rect x="12.4" y="7.2" width="1.8" height="1.8" fill="#ffd976" stroke="#000" stroke-width=".3"/>');
+IC.xor=gateIcon('=1');
+IC.lockIcon=px([
+"................",".....kkkkkk.....","....kk....kk....","....k......k....",
+"....k......k....","..kkkkkkkkkkkk..","..kBBBBBBBBBBk..","..kBBBBByyBBBk..",
+"..kBBBByyyyBBk..","..kBBBByyyyBBk..","..kBBBBByyBBBk..","..kBBBBBByBBBk..",
+"..kBBBBBBBBBBk..","..kkkkkkkkkkkk..","................","................"],P);
+
+/* ================= 科学符号 ================= */
+function sci(inner){
+  return '<svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#1a365d" stroke-width="3" stroke-linecap="square">'+inner+'</svg>';
+}
+const SC={};
+SC.and=sci('<path d="M18 14 h14 a16 16 0 0 1 0 32 h-14 z" fill="#f4ead0"/><path d="M4 22 h14 M4 38 h14 M48 30 h10"/>');
+SC.nand=sci('<path d="M14 14 h14 a16 16 0 0 1 0 32 h-14 z" fill="#f4ead0"/><circle cx="45" cy="30" r="4" fill="#f4ead0"/><path d="M2 22 h12 M2 38 h12 M49 30 h9"/>');
+SC.or=sci('<path d="M16 14 q20 0 30 16 q-10 16 -30 16 q8 -16 0 -32 z" fill="#f4ead0"/><path d="M4 22 h13 M4 38 h13 M46 30 h12"/>');
+SC.xor=sci('<path d="M20 14 q20 0 30 16 q-10 16 -30 16 q8 -16 0 -32 z" fill="#f4ead0"/><path d="M14 14 q8 16 0 32"/><path d="M2 22 h14 M2 38 h14 M50 30 h8"/>');
+SC.not=sci('<path d="M14 14 L40 30 L14 46 z" fill="#f4ead0"/><circle cx="45" cy="30" r="4" fill="#f4ead0"/><path d="M4 30 h10 M49 30 h7"/>');
+SC.diode=sci('<path d="M18 14 L18 46 L42 30 z" fill="#f4ead0"/><path d="M42 14 v32 M4 30 h14 M42 30 h14"/>');
+SC.npn=sci('<circle cx="30" cy="30" r="20" fill="#f4ead0"/><path d="M2 30 h18 M20 17 v26 M20 23 L44 8 M20 37 L44 52"/><path d="M44 52 l-9 -2 M44 52 l-3 -8"/>');
+SC.lamp=sci('<circle cx="30" cy="30" r="15" fill="#f4ead0"/><path d="M20 20 L40 40 M40 20 L20 40 M4 30 h11 M45 30 h11"/>');
+SC.sw=sci('<circle cx="14" cy="40" r="2.6" fill="#1a365d"/><circle cx="46" cy="40" r="2.6" fill="#1a365d"/><path d="M4 40 h7 M16 40 L42 22 M49 40 h7"/>');
+SC.batt=sci('<path d="M18 14 v32 M30 22 v16 M4 30 h14 M30 30 h26"/><text x="12" y="10" font-size="11" fill="#1a365d" stroke="none">+</text><text x="28" y="10" font-size="11" fill="#1a365d" stroke="none">−</text>');
+SC.clock=sci('<rect x="10" y="12" width="40" height="36" fill="#f4ead0"/><path d="M14 40 v-12 h10 v12 h10 v-12 h10"/>');
+SC.door=sci('<rect x="16" y="8" width="28" height="44" fill="#f4ead0"/><path d="M4 30 h12 M44 30 h12 M22 20 h16 M22 30 h16 M22 40 h16"/>');
+SC.lever=SC.sw; SC.torch=SC.not; SC.repeater=SC.diode; SC.lampOn=SC.lamp; SC.dust=sci('<path d="M4 30 h52" stroke-dasharray="6 5"/>'); SC.transistor=SC.npn;
+</script>
+<script>
+/* ================= 音频 ================= */
+const AU={
+  ctx:null,muted:false,
+  ensure(){ if(this.muted)return null; if(!this.ctx){ try{this.ctx=new (window.AudioContext||window.webkitAudioContext)()}catch(e){} }
+    if(this.ctx&&this.ctx.state==='suspended')this.ctx.resume(); return this.ctx; },
+  beep(f,d,type,g){ const c=this.ensure(); if(!c)return;
+    const o=c.createOscillator(),v=c.createGain(); o.type=type||'square'; o.frequency.value=f;
+    v.gain.setValueAtTime(g||.08,c.currentTime); v.gain.exponentialRampToValueAtTime(.0001,c.currentTime+d);
+    o.connect(v); v.connect(c.destination); o.start(); o.stop(c.currentTime+d); },
+  click(){ this.beep(190,.07,'square',.12); setTimeout(()=>this.beep(130,.06,'square',.1),50); },
+  tick(){ this.beep(1200,.03,'square',.03); },
+  ding(){ this.beep(660,.15,'sine',.09); setTimeout(()=>this.beep(990,.28,'sine',.09),140); },
+  chord(){ [523,659,784,1047].forEach((f,i)=>setTimeout(()=>this.beep(f,.5,'triangle',.07),i*160)); },
+  hum(on){
+    if(!on){ if(this._hum){ try{this._hum.o.stop();this._hum.o2.stop();}catch(e){} this._hum=null; } return; }
+    const c=this.ensure(); if(!c)return;
+    if(this._hum)return;
+    const o=c.createOscillator(),o2=c.createOscillator(),v=c.createGain();
+    o.type='sawtooth'; o2.type='sawtooth'; o.frequency.value=55; o2.frequency.value=55.8;
+    v.gain.value=.018; o.connect(v); o2.connect(v); v.connect(c.destination); o.start(); o2.start();
+    this._hum={o,o2};
+  }
+};
+document.addEventListener('pointerdown',()=>AU.ensure(),{once:true});
+
+/* ================= 存档 ================= */
+const SAVE_KEY='mc_digital_creator_save';
+let S={cleared:[],ach:[],sci:false,sandbox:null,capBest:null,muted:false};
+function loadSave(){ try{ const j=JSON.parse(localStorage.getItem(SAVE_KEY)); if(j)S=Object.assign(S,j); }catch(e){} }
+function save(){ try{ localStorage.setItem(SAVE_KEY,JSON.stringify(S)); }catch(e){} }
+function cleared(id){ return S.cleared.includes(id); }
+function unlocked(id){
+  if(id===0)return true;
+  if(id==='creative'||id==='cap')return cleared(5);
+  return cleared(id-1);
+}
+
+/* ================= 成就与提示 ================= */
+const ACH={
+  s1:{n:'电流启蒙者',d:'点亮第一盏灯：二极管导通。',ic:'torch'},
+  s2:{n:'硅基祭司',d:'控制水流般的电流：晶体管开关。',ic:'transistor'},
+  s3:{n:'逻辑学徒',d:'掌握与或非三种基本逻辑门。',ic:'and'},
+  s4:{n:'万能工匠',d:'用 NAND 搭出一切：通用性的证明。',ic:'nand'},
+  s5:{n:'比特先知',d:'破译二进制密码。',ic:'emerald'},
+  cap:{n:'红石计算机之父',d:'亲手造出一位半加器！',ic:'chip'}
+};
+function toast(txt,good){
+  const t=h('div','toast'+(good===false?' bad':''),txt);
+  $('#toast-layer').appendChild(t);
+  setTimeout(()=>t.classList.add('on'),20);
+  setTimeout(()=>{t.classList.remove('on');setTimeout(()=>t.remove(),400)},2600);
+}
+function award(id){
+  if(S.ach.includes(id))return;
+  S.ach.push(id); save();
+  AU.ding();
+  const a=ACH[id];
+  modal('<div class="ach-unlock"><div class="ic">'+(IC[a.ic]||IC.emerald)+'</div>'
+    +'<div><div style="color:#7a5c2e;font-size:13px;letter-spacing:2px">成就解锁</div>'
+    +'<div class="t">'+a.n+'</div><div class="d">'+a.d+'</div></div></div>'
+    +'<div style="text-align:right;margin-top:14px"><button class="mc-btn" onclick="closeModal()">收下</button></div>');
+}
+function modal(html){ $('#modal-body').innerHTML=html; $('#ov-modal').classList.add('on'); }
+function closeModal(){ $('#ov-modal').classList.remove('on'); }
+$('#ov-modal').addEventListener('click',e=>{ if(e.target.id==='ov-modal')closeModal(); });
+
+/* ================= 地图 ================= */
+const MAPNODES=[
+  {id:0,x:120,y:470,t:'微观世界',s:'显微镜之旅'},
+  {id:1,x:250,y:340,t:'电流单行道',s:'二极管'},
+  {id:2,x:400,y:440,t:'水流阀门',s:'晶体管'},
+  {id:3,x:540,y:300,t:'逻辑三兄弟',s:'与 · 或 · 非'},
+  {id:4,x:680,y:420,t:'万能积木',s:'NAND'},
+  {id:5,x:820,y:300,t:'比特密码',s:'二进制'},
+  {id:'cap',x:920,y:160,t:'终极挑战',s:'半加器'},
+  {id:'creative',x:80,y:180,t:'创造沙盒',s:'自由拼搭'}
+];
+const MAPTRACE=[[0,1],[1,2],[2,3],[3,4],[4,5],[5,'cap']];
+function buildMap(){
+  const svg=$('#map-svg'); svg.innerHTML='';
+  const ns='http://www.w3.org/2000/svg';
+  let bg='<defs><pattern id="gp" width="40" height="40" patternUnits="userSpaceOnUse">'
+    +'<rect width="40" height="40" fill="#0d0d0d"/><path d="M40 0 H0 V40" fill="none" stroke="#1c1c1c" stroke-width="1"/></pattern></defs>'
+    +'<rect width="1000" height="580" fill="url(#gp)"/>'
+    +'<text x="500" y="58" class="map-title">红石大陆 · 创造之旅</text>'
+    +'<text x="500" y="86" class="map-sub">从一块红石粉，到一台真正的计算机</text>';
+  svg.innerHTML=bg;
+  MAPTRACE.forEach(([a,b])=>{
+    const A=MAPNODES.find(n=>n.id===a), B=MAPNODES.find(n=>n.id===b);
+    const l=document.createElementNS(ns,'path');
+    const mx=(A.x+B.x)/2;
+    l.setAttribute('d','M'+A.x+' '+A.y+' L'+mx+' '+A.y+' L'+mx+' '+B.y+' L'+B.x+' '+B.y);
+    l.setAttribute('class','trace'+(unlocked(b)?' lit':''));
+    svg.appendChild(l);
+  });
+  MAPNODES.forEach(n=>{
+    const open=unlocked(n.id), done=cleared(n.id);
+    const g=document.createElementNS(ns,'g');
+    g.setAttribute('class','node'+(open?'':' lock')+(done?' clear':''));
+    g.setAttribute('transform','translate('+n.x+','+n.y+')');
+    const ring=document.createElementNS(ns,'circle');
+    ring.setAttribute('r','34'); ring.setAttribute('class','nring');
+    ring.setAttribute('fill','#1c1c1c'); ring.setAttribute('stroke',done?'#3fae2a':(open?'#ff2200':'#444'));
+    ring.setAttribute('stroke-width','5');
+    g.appendChild(ring);
+    const fo=document.createElementNS(ns,'foreignObject');
+    fo.setAttribute('x','-21'); fo.setAttribute('y','-21');
+    fo.setAttribute('width','42'); fo.setAttribute('height','42');
+    const ic=document.createElement('div');
+    ic.style.cssText='width:100%;height:100%';
+    ic.innerHTML=open?(done?IC.emerald:IC.dust):IC.lockIcon;
+    fo.appendChild(ic); g.appendChild(fo);
+    const t1=document.createElementNS(ns,'text');
+    t1.setAttribute('y','56'); t1.setAttribute('class','nlabel'+(open?'':' dim')); t1.textContent=n.t;
+    const t2=document.createElementNS(ns,'text');
+    t2.setAttribute('y','74'); t2.setAttribute('class','nlabel dim'); t2.setAttribute('font-size','12'); t2.textContent=n.s;
+    g.appendChild(t1); g.appendChild(t2);
+    if(open){
+      g.addEventListener('click',()=>{
+        AU.click();
+        if(n.id==='creative')openSandbox();
+        else if(n.id==='cap')openSandbox('cap');
+        else openStage(n.id);
+      });
+    }
+    svg.appendChild(g);
+  });
+  updateHUD();
+}
+</script>
+<script>
+/* ================= 关卡框架 ================= */
+let CUR={id:null,meta:null};
+function show(id){ $$('.screen').forEach(s=>s.classList.remove('on')); $(id).classList.add('on'); }
+
+function openStage(id){
+  CUR.id=id; CUR.meta=STAGES.find(s=>s.id===id); CUR._done3={}; CUR._done4={};
+  show('#screen-stage');
+  $('#lab').innerHTML='';
+  buildQA(CUR.meta);
+  buildTT(CUR.meta);
+  CUR.meta.build($('#lab'));
+  $('#btn-next').style.display=cleared(id)?'':'none';
+  const st=STAGES[STAGES.findIndex(s=>s.id===id)+1];
+  $('#btn-next').textContent=st?('下一关：'+st.short+' →'):'前往终极挑战 →';
+}
+function clearStage(id){
+  if(!cleared(id)){ S.cleared.push(id); save(); }
+  $('#btn-next').style.display='';
+  buildMap();
+  if(ACH['s'+id])award('s'+id);
+  else{ AU.ding(); toast('关卡通过！'); }
+}
+function buildQA(meta){
+  const r=$('#rail-qa'); r.innerHTML='<div class="paper-t">史蒂夫的五连问</div>';
+  meta.qa.forEach((q,i)=>{
+    const it=h('div','qa-item');
+    it.innerHTML='<div class="qa-q"><span>Q'+(i+1)+'</span>'+q.q+'</div><div class="qa-a">'+q.a+'</div>';
+    it.querySelector('.qa-q').addEventListener('click',()=>{ it.classList.toggle('open'); AU.tick(); });
+    r.appendChild(it);
+  });
+}
+function buildTT(meta){
+  const r=$('#rail-tt');
+  r.innerHTML='<div class="paper-t">'+meta.goal+'</div><div id="tt-box"></div>';
+  meta._tt=null;
+}
+function markRow(i,ok){
+  const meta=CUR.meta; if(!meta._tt)return false;
+  const row=meta._tt.rows[i]; if(!row)return false;
+  row.classList.remove('pass','fail');
+  row.classList.add(ok?'pass':'fail');
+  return ok;
+}
+function allPass(){
+  const meta=CUR.meta; if(!meta._tt)return false;
+  return [...meta._tt.rows].every(r=>r.classList.contains('pass'));
+}
+function runTT(meta,table){
+  // table: {head:[], rows:[[...inputs, expect]], test:(inputs)=>actual}
+  const box=$('#tt-box'); box.innerHTML='';
+  const t=h('table','tt');
+  let thead='<tr>'+table.head.map(x=>'<th>'+x+'</th>').join('')+'<th>结果</th></tr>';
+  t.innerHTML=thead;
+  table.rows.forEach((row,i)=>{
+    const tr=h('tr');
+    tr.innerHTML=row.map(x=>'<td>'+x+'</td>').join('')+'<td class="mk">—</td>';
+    t.appendChild(tr);
+  });
+  box.appendChild(t);
+  meta._tt={rows:[...t.querySelectorAll('tr')].slice(1),table};
+  const btn=h('button','mc-btn','自我检测');
+  btn.style.marginTop='10px';
+  btn.addEventListener('click',()=>{
+    AU.click();
+    let pass=true;
+    table.rows.forEach((row,i)=>{
+      const inputs=row.slice(0,row.length-1);
+      const actual=table.test(inputs);
+      const ok=String(actual)===String(row[row.length-1]);
+      markRow(i,ok);
+      const res=meta._tt.rows[i].querySelector('.mk');
+      res.className='mk '+(ok?'ok':'no');
+      res.textContent=ok?'✓':'✗ '+actual;
+      if(!ok)pass=false;
+    });
+    if(pass){
+      if(allPass()){
+        if(meta.selfcheck)meta.selfcheck();
+        else toast('全部正确！完成关卡目标吧。');
+      }
+    }else toast('有的行不对，再调调看。',false);
+  });
+  box.appendChild(btn);
+}
+
+/* ================= 场景工具 ================= */
+function mkScene(lab,title,goal){
+  const hd=h('div','lab-head');
+  hd.innerHTML='<span class="lab-title">'+title+'</span><span class="lab-goal">'+goal+'</span>';
+  lab.appendChild(hd);
+  const sc=h('div','scene');
+  sc.innerHTML='<svg class="wires" viewBox="0 0 1000 625" preserveAspectRatio="none"></svg>';
+  lab.appendChild(sc);
+  sc.wires=sc.querySelector('svg');
+  return sc;
+}
+function put(sc,ic,x,y,label,cls,sciKey){
+  const c=h('div','comp '+(cls||''));
+  c.innerHTML='<div class="inner"><div class="face front">'+ic+'</div><div class="face back">'+(SC[sciKey]||'')+'</div></div>'+(label?'<div class="tag">'+label+'</div>':'');
+  c.style.left=x+'%'; c.style.top=y+'%';
+  c.style.width='9%'; c.style.height='13.5%';
+  sc.appendChild(c);
+  return c;
+}
+function wire(sc,x1,y1,x2,y2){
+  const ns='http://www.w3.org/2000/svg';
+  const p=document.createElementNS(ns,'path');
+  const mx=(x1+x2)/2, X=v=>v*10, Y=v=>v*6.25;
+  p.setAttribute('d','M'+X(x1)+' '+Y(y1)+' L'+X(mx)+' '+Y(y1)+' L'+X(mx)+' '+Y(y2)+' L'+X(x2)+' '+Y(y2));
+  p.setAttribute('class','wire');
+  p.setAttribute('fill','none');
+  sc.wires.appendChild(p);
+  return p;
+}
+function setW(...ws){ ws.forEach(w=>w&&w.classList.add('on')); }
+function unsetW(...ws){ ws.forEach(w=>w&&w.classList.remove('on')); }
+function setLamp(lamp,on){ lamp.classList.toggle('lit',on); }
+function wlabel(sc,txt,x,y,size,fill){
+  const ns='http://www.w3.org/2000/svg';
+  const t=document.createElementNS(ns,'text');
+  t.setAttribute('x',x); t.setAttribute('y',y);
+  t.setAttribute('fill',fill||'#888'); t.setAttribute('font-size',size||18);
+  t.setAttribute('text-anchor','middle');
+  t.setAttribute('font-family','inherit');
+  t.textContent=txt;
+  sc.wires.appendChild(t);
+  return t;
+}
+</script>
+<script>
+/* ================= 第0关 · 微观世界 ================= */
+const ZOOM_NAMES=['红石火把','红石粉颗粒','分子','原子','电子之海'];
+function zoomScenes(){
+  const L=[];
+  L[0]='<rect x="380" y="220" width="240" height="180" fill="#2a2a2a" stroke="#000" stroke-width="8"/>'
+    +'<rect x="460" y="140" width="80" height="90" fill="#ff2200"><animate attributeName="opacity" values="1;.6;1" dur="1.4s" repeatCount="indefinite"/></rect>'
+    +'<rect x="476" y="220" width="48" height="120" fill="#8b5a2b"/>'
+    +'<text x="500" y="420" class="zlabel" text-anchor="middle"> Minecraft 里的红石火把</text>'
+    +'<text x="500" y="460" class="zlabel2" text-anchor="middle">它为整个电路提供能量 —— 就像电池</text>';
+  let dots=''; for(let i=0;i<40;i++){const x=120+((i*173)%760),y=120+((i*97)%360);dots+='<circle cx="'+x+'" cy="'+y+'" r="'+(8+(i%4)*3)+'" fill="#'+(i%3?'c0392b':'ff2200')+'"/>';}
+  L[1]=dots+'<text x="500" y="540" class="zlabel" text-anchor="middle">放大 100 倍：一颗颗红石粉颗粒</text>';
+  let mol=''; for(let i=0;i<14;i++){const a=i/14*Math.PI*2;mol+='<circle cx="'+(500+Math.cos(a)*180)+'" cy="'+(300+Math.sin(a)*150)+'" r="26" fill="#'+(i%2?'8a8a8a':'c0392b')+'" stroke="#000" stroke-width="4"/>';}
+  L[2]=mol+'<text x="500" y="540" class="zlabel" text-anchor="middle">再放大：颗粒由无数分子组成</text>';
+  L[3]='<circle cx="500" cy="300" r="46" fill="#ffd976" stroke="#000" stroke-width="5"/>'
+    +'<ellipse cx="500" cy="300" rx="240" ry="90" fill="none" stroke="#4aa3ff" stroke-width="4"/>'
+    +'<ellipse cx="500" cy="300" rx="240" ry="90" fill="none" stroke="#4aa3ff" stroke-width="4" transform="rotate(60 500 300)"/>'
+    +'<ellipse cx="500" cy="300" rx="240" ry="90" fill="none" stroke="#4aa3ff" stroke-width="4" transform="rotate(-60 500 300)"/>'
+    +'<circle cx="740" cy="300" r="14" fill="#7fd0ff"><animateTransform attributeName="transform" type="rotate" from="0 500 300" to="360 500 300" dur="3s" repeatCount="indefinite"/></circle>'
+    +'<text x="500" y="540" class="zlabel" text-anchor="middle">继续放大：原子！中间是原子核，外面绕着电子</text>';
+  let el=''; for(let i=0;i<26;i++){const y=90+(i%7)*70;el+='<circle class="electron" cx="'+(60+(i*131)%600)+'" cy="'+y+'" r="10" fill="#7fd0ff"/>';}
+  L[4]=el+'<text x="500" y="560" class="zlabel" text-anchor="middle">放大一亿倍：自由奔跑的电子 —— 这就是「电流」！</text>'
+    +'<text x="500" y="596" class="zlabel2" text-anchor="middle">计算机的全部魔法，就是让电子按我们的规则奔跑</text>';
+  return L;
+}
+function buildS0(lab){
+  const sc=mkScene(lab,'第 0 关 · 微观世界','拖动滑块，从红石火把一路放大到电子。');
+  sc.style.minHeight='420px';
+  const zs=zoomScenes();
+  const layers=zs.map(inner=>{
+    const d=h('div','zoom-scene');
+    d.innerHTML='<svg viewBox="0 0 1000 625" style="position:absolute;inset:0;width:100%;height:100%">'+inner+'</svg>';
+    sc.appendChild(d); return d;
+  });
+  layers[0].classList.add('on');
+  const ctl=h('div','mc-panel mt12');
+  ctl.innerHTML='<div style="display:flex;justify-content:space-between;font-size:14px;color:#333"><span>红石火把</span><span>电子</span></div>';
+  const slider=h('input'); slider.type='range'; slider.min=0; slider.max=4; slider.value=0; slider.step=1;
+  ctl.appendChild(slider);
+  const name=h('div','center','<b id="zname" style="font-size:20px;color:#7a2d0c">'+ZOOM_NAMES[0]+'</b>');
+  ctl.appendChild(name);
+  lab.appendChild(ctl);
+  const visited=new Set([0]);
+  slider.addEventListener('input',()=>{
+    const v=+slider.value; AU.tick();
+    layers.forEach((l,i)=>l.classList.toggle('on',i===v));
+    name.textContent=ZOOM_NAMES[v];
+    visited.add(v);
+    if(visited.size===5){
+      btn.style.display='';
+      toast('你已经看到了电流的真面目！');
+    }
+  });
+  const btn=h('button','mc-btn g','开始我的创造之旅 →');
+  btn.style.cssText='display:none;margin:14px auto 6px';
+  btn.addEventListener('click',()=>{ AU.chord(); clearStage(0); });
+  lab.appendChild(btn);
+  runTT(CUR.meta,{
+    head:['问题','你的答案','参考答案'],
+    rows:[['电流的本质是什么？','一群奔跑的电子','电子']],
+    test:()=>'电子'
+  });
+  CUR.meta.selfcheck=()=>{};
+}
+</script>
+<script>
+/* ================= 第1关 · 电流单行道（二极管） ================= */
+function buildS1(lab){
+  const sc=mkScene(lab,'第 1 关 · 电流单行道','把电池和二极管转到正确方向，拉下开关，点亮红石灯。');
+  const st={sw:false,bat:0,dio:0};  // 0=正向 1=反向
+  const bat=put(sc,IC.battery,6,30,'电池','clickable','batt');
+  const sw=put(sc,IC.lever,30,30,'开关','clickable','sw');
+  const dio=put(sc,IC.repeater,54,30,'二极管','clickable','diode');
+  const lamp=put(sc,IC.lampOff,78,30,'红石灯','','lamp');
+  const w1=wire(sc,14,40,32,40), w2=wire(sc,38,40,56,40), w3=wire(sc,62,40,80,40);
+  [bat,dio].forEach(c=>c.querySelector('.inner').style.transition='transform .5s ease-in-out');
+  function litNow(){ return st.sw && st.bat===st.dio; }
+  function refresh(){
+    bat.classList.toggle('flipx',st.bat===1);
+    dio.classList.toggle('flipx',st.dio===1);
+    sw.classList.toggle('sig1',st.sw);
+    sw.querySelector('.tag').textContent=st.sw?'开关 · 开':'开关';
+    const lit=litNow();
+    lamp.querySelector('.front').innerHTML=lit?IC.lampOn:IC.lampOff;
+    lamp.classList.toggle('sig1',lit);
+    if(lit)setW(w1,w2,w3); else unsetW(w1,w2,w3);
+    AU.hum(lit);
+  }
+  bat.addEventListener('click',()=>{ st.bat^=1; AU.click(); refresh(); });
+  dio.addEventListener('click',()=>{ st.dio^=1; AU.click(); refresh(); });
+  sw.addEventListener('click',()=>{
+    st.sw=!st.sw;
+    if(st.sw){ AU.click(); if(!litNow()){ sc.classList.add('shake'); setTimeout(()=>sc.classList.remove('shake'),420); toast(litHint(),false);} }
+    else AU.tick();
+    refresh();
+  });
+  function litHint(){
+    if(st.bat!==st.dio)return '电流被二极管挡住了！它只准电子单向通过。';
+    return '电路还没通，检查每个元件的方向。';
+  }
+  refresh();
+  runTT(CUR.meta,{
+    head:['开关','电池方向','二极管方向','灯'],
+    rows:[
+      ['关','正','正','灭'],
+      ['开','正','反','灭'],
+      ['开','反','正','灭'],
+      ['开','正','正','亮']
+    ],
+    test:([s,b,d])=>{ const on=(s==='开'); return (on&&b===d)?'亮':'灭'; }
+  });
+  CUR.meta.selfcheck=()=>{
+    // 自检全对后，还需玩家亲手点亮一次
+    if(litNow())clearStage(1);
+    else toast('表格全对！现在亲手把灯点亮吧。');
+  };
+  // 点亮即过关（二选一路径）
+  const orig=refresh;
+  refresh=function(){
+    orig();
+    if(litNow()&&!cleared(1)&&st.sw){ setTimeout(()=>clearStage(1),500); refresh=orig; }
+  };
+}
+
+/* ================= 第2关 · 水流阀门（晶体管） ================= */
+function buildS2(lab){
+  const sc=mkScene(lab,'第 2 关 · 水流阀门','拖动基极电压滑块：小电压控制大水流，这就是晶体管。');
+  const ns='http://www.w3.org/2000/svg';
+  // 水管
+  const pipe=document.createElementNS(ns,'path');
+  pipe.setAttribute('d','M120 200 H880'); pipe.setAttribute('class','pipe');
+  sc.wires.appendChild(pipe);
+  const water=document.createElementNS(ns,'path');
+  water.setAttribute('d','M120 200 H880'); water.setAttribute('class','waterflow');
+  water.setAttribute('stroke-width','4');
+  sc.wires.appendChild(water);
+  const wt1=wlabel(sc,'集电极（水源）',180,160,18,'#cfe3ff');
+  const wt2=wlabel(sc,'发射极（出水）',820,160,18,'#cfe3ff');
+  const tr=put(sc,IC.chip,44,24,'晶体管','','npn');
+  tr.style.width='12%'; tr.style.height='19%';
+  const wl=wlabel(sc,'基极（闸门）',500,430,18,'#ffe8a0');
+  const wl2=wlabel(sc,'水流 = 电流 · 闸门 = 基极电压',500,60,20,'#ffd976');
+  // 灯
+  const lamp=put(sc,IC.lampOff,80,42,'红石灯','','lamp');
+  const wOut=wire(sc,56,33,84,44);
+  const ctl=h('div','mc-panel mt12');
+  ctl.innerHTML='<div style="font-size:14px;color:#333;margin-bottom:2px">基极电压：<b id="bv">0</b> / 15（≥ 8 闸门全开）</div>';
+  const slider=h('input'); slider.type='range'; slider.min=0; slider.max=15; slider.value=0;
+  ctl.appendChild(slider);
+  lab.appendChild(ctl);
+  function on(){ return +slider.value>=8; }
+  function refresh(){
+    const v=+slider.value;
+    ctl.querySelector('#bv').textContent=v;
+    water.setAttribute('stroke-width',String(2+v*1.4));
+    water.style.opacity=v?(.25+v/15*.75):.15;
+    const lit=on();
+    lamp.querySelector('.front').innerHTML=lit?IC.lampOn:IC.lampOff;
+    lamp.classList.toggle('sig1',lit);
+    if(lit)setW(wOut); else unsetW(wOut);
+    AU.hum(lit);
+  }
+  slider.addEventListener('input',()=>{ AU.tick(); refresh(); });
+  refresh();
+  runTT(CUR.meta,{
+    head:['基极电压','闸门','灯'],
+    rows:[['0（无电压）','关','灭'],['15（满电压）','开','亮']],
+    test:([v])=>v.startsWith('15')?'亮':'灭'
+  });
+  CUR.meta.selfcheck=()=>{
+    if(on())clearStage(2);
+    else toast('把基极电压推到 8 以上，点亮灯！');
+  };
+}
+</script>
+<script>
+/* ================= 第3关 · 逻辑三兄弟 ================= */
+const GATES3=[
+  {k:'not',name:'非门 NOT',ic:'not',ins:1,fn:a=>!a,
+   desc:'唱反调：输入 1 它出 0，输入 0 它出 1。'},
+  {k:'and',name:'与门 AND',ic:'and',ins:2,fn:(a,b)=>a&&b,
+   desc:'铁面无私：两个输入都是 1，才输出 1。'},
+  {k:'or',name:'或门 OR',ic:'or',ins:2,fn:(a,b)=>a||b,
+   desc:'好说话：只要有一个输入是 1，就输出 1。'}
+];
+function buildS3(lab){
+  const sc=mkScene(lab,'第 3 关 · 逻辑三兄弟','切换三种逻辑门，点亮每盏灯，并填对三张真值表。');
+  CUR._done3={};
+  const tabs=h('div','tabs'); lab.insertBefore(tabs,sc.nextSibling);
+  const leverA=put(sc,IC.lever,8,20,'输入 A','clickable','sw');
+  const leverB=put(sc,IC.lever,8,55,'输入 B','clickable','sw');
+  const gate=put(sc,IC.not,42,36,'非门 NOT','');
+  gate.style.width='14%'; gate.style.height='21%';
+  const lamp=put(sc,IC.lampOff,76,36,'输出','','lamp');
+  const wA=wire(sc,16,28,44,40), wB=wire(sc,16,63,44,48), wO=wire(sc,54,44,78,44);
+  const st={a:0,b:0,g:0};
+  function curGate(){ return GATES3[st.g]; }
+  function out(){ const g=curGate(); return g.ins===1?g.fn(st.a):g.fn(st.a,st.b); }
+  function refresh(){
+    const g=curGate();
+    gate.querySelector('.front').innerHTML=IC[g.ic];
+    gate.querySelector('.back').innerHTML=SC[g.ic];
+    gate.querySelector('.tag').textContent=g.name;
+    leverB.style.display=g.ins===2?'':'none';
+    wB.style.display=g.ins===2?'':'none';
+    const o=out();
+    lamp.querySelector('.front').innerHTML=o?IC.lampOn:IC.lampOff;
+    lamp.classList.toggle('sig1',!!o);
+    st.a?setW(wA):unsetW(wA); st.b?setW(wB):unsetW(wB); o?setW(wO):unsetW(wO);
+    leverA.classList.toggle('sig1',!!st.a); leverB.classList.toggle('sig1',!!st.b);
+    leverA.querySelector('.tag').textContent='输入 A = '+st.a; leverB.querySelector('.tag').textContent='输入 B = '+st.b;
+    AU.hum(!!o);
+  }
+  leverA.addEventListener('click',()=>{ st.a^=1; AU.click(); refresh(); });
+  leverB.addEventListener('click',()=>{ st.b^=1; AU.click(); refresh(); });
+  GATES3.forEach((g,i)=>{
+    const b=h('button',i===0?'on':'',g.name);
+    b.addEventListener('click',()=>{ st.g=i; AU.click();
+      tabs.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on');
+      switchGate(i); refresh(); });
+    tabs.appendChild(b);
+  });
+  const ttBox=h('div','mt8'); lab.appendChild(ttBox);
+  function switchGate(i){
+    const g=GATES3[i];
+    const rows=g.ins===1
+      ? [[0,1],[1,0]]
+      : [[0,0,0],[0,1,g.fn(0,1)?1:0],[1,0,g.fn(1,0)?1:0],[1,1,g.fn(1,1)?1:0]].map(r=>[r[0],r[1],g.fn(r[0],r[1])?1:0]);
+    runTT(CUR.meta,{
+      head:g.ins===1?['A','输出']:['A','B','输出'],
+      rows,
+      test:(ins)=>g.ins===1?(g.fn(!!+ins[0])?1:0):(g.fn(!!+ins[0],!!+ins[1])?1:0)
+    });
+    CUR.meta.selfcheck=()=>{
+      CUR._done3[g.k]=true;
+      const done=GATES3.every(x=>CUR._done3[x.k]);
+      if(done)clearStage(3);
+      else toast(g.name+' 真值表通过！还剩 '+(GATES3.length-Object.keys(CUR._done3).length)+' 种门。');
+    };
+  }
+  switchGate(0); refresh();
+}
+
+/* ================= 第4关 · 万能积木（NAND） ================= */
+function buildS4(lab){
+  const sc=mkScene(lab,'第 4 关 · 万能积木','只用 NAND 门，先后拼出 NOT 和 AND。点击 NAND 切换接法。');
+  CUR._done4={};
+  const modes=[
+    {k:'free',t:'自由观察',n:1},
+    {k:'t1',t:'任务一：NAND → NOT',n:1},
+    {k:'t2',t:'任务二：NAND → AND',n:2}
+  ];
+  let mode='free';
+  const tabs=h('div','tabs'); lab.insertBefore(tabs,sc.nextSibling);
+  modes.forEach((m,i)=>{
+    const b=h('button',i===0?'on':'',m.t);
+    b.addEventListener('click',()=>{ mode=m.k; AU.click();
+      tabs.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on');
+      rebuild(); });
+    tabs.appendChild(b);
+  });
+  const st={a:0,b:0,link:0};
+  let refs={};
+  function rebuild(){
+    sc.querySelectorAll('.comp').forEach(c=>c.remove());
+    sc.wires.querySelectorAll('path').forEach(p=>p.remove());
+    sc.wires.querySelectorAll('text').forEach(t=>t.remove());
+    refs={};
+    refs.la=put(sc,IC.lever,6,18,'输入 A','clickable','sw');
+    refs.lb=put(sc,IC.lever,6,55,'输入 B','clickable','sw');
+    refs.n1=put(sc,IC.nand,36,32,'NAND ①','clickable','nand');
+    refs.n1.style.width='13%'; refs.n1.style.height='19%';
+    refs.wA=wire(sc,14,26,38,36); refs.wB=wire(sc,14,63,38,44);
+    refs.jump=wire(sc,20,26,38,44); refs.jump.classList.add('jump');
+    refs.lamp=put(sc,IC.lampOff,80,32,'输出','','lamp');
+    refs.wO=wire(sc,49,40,82,40);
+    if(mode==='t2'){
+      refs.n2=put(sc,IC.nand,60,32,'NAND ②','');
+      refs.n2.style.width='13%'; refs.n2.style.height='19%';
+      refs.w12=wire(sc,49,40,62,40);
+      refs.wO2=wire(sc,73,40,82,40);
+      refs.wO.style.display='none';
+      wlabel(sc,'NAND → 再取反 = AND',500,120,20,'#ffd976');
+    }
+    refs.la.addEventListener('click',()=>{ st.a^=1; AU.click(); refresh(); });
+    refs.lb.addEventListener('click',()=>{ st.b^=1; AU.click(); refresh(); });
+    refs.n1.addEventListener('click',()=>{
+      st.link^=1; AU.click();
+      refs.jump.style.display=st.link?'':'none';
+      toast(st.link?'任务一接法：A 同时接到两个输入（跳线）':'分开接法：A、B 各自独立');
+      refresh();
+    });
+    refs.jump.style.display='none';
+    refresh();
+  }
+  function nand(a,b){ return !(a&&b)?1:0; }
+  function out(){
+    if(mode==='t1'&&st.link)return nand(st.a,st.a);
+    const o1=nand(st.a,st.b);
+    if(mode==='t2')return nand(o1,o1);
+    return o1;
+  }
+  function refresh(){
+    const o=out();
+    st.a?setW(refs.wA):unsetW(refs.wA); st.b?setW(refs.wB):unsetW(refs.wB);
+    st.link?setW(refs.jump):unsetW(refs.jump);
+    refs.la.classList.toggle('sig1',!!st.a); refs.lb.classList.toggle('sig1',!!st.b);
+    refs.la.querySelector('.tag').textContent='输入 A = '+st.a; refs.lb.querySelector('.tag').textContent='输入 B = '+st.b;
+    refs.lamp.querySelector('.front').innerHTML=o?IC.lampOn:IC.lampOff;
+    refs.lamp.classList.toggle('sig1',!!o);
+    if(refs.wO2){ const o1=nand(st.a,st.b); o1?setW(refs.w12):unsetW(refs.w12); o?setW(refs.wO2):unsetW(refs.wO2); }
+    else o?setW(refs.wO):unsetW(refs.wO);
+    AU.hum(!!o);
+  }
+  rebuild();
+  runTT(CUR.meta,{
+    head:['任务','接法','结果'],
+    rows:[['NAND → NOT','A 接两个输入（点 NAND ① 跳线）','输出 = 非A'],['NAND → AND','两级 NAND 串联','输出 = A与B']],
+    test:()=>''
+  });
+  CUR.meta.selfcheck=()=>{};
+  // 玩家验证路径：任务一模式下 a=1 输出应为 0
+  const chk=h('button','mc-btn g mt8','我来验证当前任务');
+  lab.appendChild(chk);
+  chk.addEventListener('click',()=>{
+    AU.click();
+    if(mode==='t1'){
+      if(!st.link){ toast('先点一下 NAND ① 接上跳线！',false); return; }
+      const ok=(nand(0,0)===1)&&(nand(1,1)===0)&&out()===(st.a?0:1);
+      if(ok){ CUR._done4.t1=true; toast('NOT 验证通过！'+(CUR._done4.t2?'':'去做任务二。')); }
+      else toast('输出不对，检查接法。',false);
+    }else if(mode==='t2'){
+      const expect=st.a&&st.b?1:0;
+      if(out()===expect){ CUR._done4.t2=true; toast('AND 验证通过！'+(CUR._done4.t1?'':'再回任务一。')); }
+      else toast('输出不对。',false);
+    }else toast('先选一个任务标签页。',false);
+    if(CUR._done4.t1&&CUR._done4.t2)clearStage(4);
+  });
+}
+</script>
+<script>
+/* ================= 第5关 · 比特密码（二进制） ================= */
+function buildS5(lab){
+  const sc=mkScene(lab,'第 5 关 · 比特密码','四盏灯 = 四个比特（×8 ×4 ×2 ×1），点亮组合等于目标数。连续破译 3 个密码过关。');
+  const weights=[8,4,2,1];
+  const st={bits:[0,0,0,0],target:0,score:0};
+  const lamps=[],ws=[];
+  weights.forEach((w,i)=>{
+    const lamp=put(sc,IC.lampOff,14+i*20,30,'×'+w,'clickable','lamp');
+    lamps.push(lamp);
+    const wl=wlabel(sc,'第'+(4-i)+'位 · 权重 '+w,185+i*200,120,17,'#888');
+    lamp.addEventListener('click',()=>{
+      st.bits[i]^=1; AU.click(); refresh();
+    });
+  });
+  const panel=h('div','mc-panel mt12 center');
+  panel.innerHTML='<div style="font-size:15px;color:#333">目标密码</div><div class="big-dec" id="target">?</div>'
+    +'<div class="bits mt8" id="bitsrow"><b>0</b><b>0</b><b>0</b><b>0</b></div>'
+    +'<div class="mt8" style="font-size:14px;color:#333">当前值：<b id="curval">0</b> · 已破译：<b id="score">0</b>/3</div>'
+    +'<div class="mt8"><button class="mc-btn g" id="check5">提交密码</button></div>';
+  lab.appendChild(panel);
+  function sum(){ return st.bits.reduce((s,b,i)=>s+b*weights[i],0); }
+  function newTarget(){ let t; do{ t=1+Math.floor(Math.random()*15); }while(t===st.target); st.target=t; panel.querySelector('#target').textContent=t; }
+  function refresh(){
+    lamps.forEach((l,i)=>{
+      l.querySelector('.front').innerHTML=st.bits[i]?IC.lampOn:IC.lampOff;
+      l.classList.toggle('sig1',!!st.bits[i]);
+    });
+    const row=panel.querySelector('#bitsrow');
+    [...row.children].forEach((b,i)=>{ b.textContent=st.bits[i]; b.classList.toggle('on',!!st.bits[i]); });
+    panel.querySelector('#curval').textContent=sum();
+    panel.querySelector('#score').textContent=st.score;
+  }
+  newTarget(); refresh();
+  panel.querySelector('#check5').addEventListener('click',()=>{
+    if(sum()===st.target){
+      st.score++; AU.ding();
+      toast('破译成功！'+st.target+' = '+st.bits.join('')+'₂');
+      if(st.score>=3){ clearStage(5); return; }
+      newTarget();
+    }else{
+      AU.tick(); panel.classList.add('shake'); setTimeout(()=>panel.classList.remove('shake'),420);
+      toast('现在是 '+sum()+'，目标是 '+st.target+'。',false);
+    }
+    refresh();
+  });
+  runTT(CUR.meta,{
+    head:['二进制','十进制'],
+    rows:[['0 0 0 1','1'],['0 1 0 1','5'],['1 0 1 1','11'],['1 1 1 1','15']],
+    test:([b])=>b.split(' ').reduce((s,x,i)=>s+(+x)*weights[i],0)
+  });
+  CUR.meta.selfcheck=()=>toast('真值表全对！再破译 '+(3-st.score)+' 个密码。');
+}
+
+/* ================= 关卡元数据 ================= */
+const STAGES=[
+  {id:0,short:'微观世界',title:'第 0 关 · 微观世界',goal:'通关条件：看完 5 个放大层级，按下出发按钮。',
+   build:buildS0,
+   qa:[
+    {q:'这是什么？',a:'我们在显微镜下观察红石电路的最小单位——电子。'},
+    {q:'它是干什么的？',a:'电子的定向移动就是电流，电流是计算机的「血液」。'},
+    {q:'它怎么工作？',a:'电压像水压一样推动电子，导线像水管一样输送电子。'},
+    {q:'和红石什么关系？',a:'红石粉就是导线，红石火把就是电池——MC 电路和真实电路一一对应。'},
+    {q:'用在哪儿？',a:'从手电筒到超级计算机，一切电子设备都靠电子奔跑。'}],
+   hint:'拖动滑块从最左到最右，每一层都停一下看看。'},
+  {id:1,short:'电流单行道',title:'第 1 关 · 电流单行道',goal:'通关条件：真值表自检全对，并亲手点亮红石灯。',
+   build:buildS1,
+   qa:[
+    {q:'这是什么？',a:'二极管，一个只允许电流单向通过的「单行闸门」。'},
+    {q:'它是干什么的？',a:'防止电流倒灌，保护电路，也用来「选择」电流路线。'},
+    {q:'它怎么工作？',a:'内部的 P-N 结只在一个方向上打开通道，反向就被挡住。'},
+    {q:'和红石什么关系？',a:'红石中继器就是一个二极管——信号只能顺箭头走。'},
+    {q:'用在哪儿？',a:'充电器、LED、电源保护……几乎所有电路里都有它。'}],
+   hint:'点击电池或二极管可以调转方向，让两个箭头方向一致再拉开关。'},
+  {id:2,short:'水流阀门',title:'第 2 关 · 水流阀门',goal:'通关条件：真值表自检全对，并把基极电压推到 8 以上点亮灯。',
+   build:buildS2,
+   qa:[
+    {q:'这是什么？',a:'晶体管（三极管），用电控制的「水龙头」。'},
+    {q:'它是干什么的？',a:'用小电流控制大电流——它是所有芯片的基本细胞。'},
+    {q:'它怎么工作？',a:'基极加电压，集电极和发射极之间的「闸门」就打开。'},
+    {q:'和红石什么关系？',a:'红石火把就是一个天然晶体管：侧面有信号时它熄灭（反向）。'},
+    {q:'用在哪儿？',a:'你的手机芯片里有上百亿个晶体管！'}],
+   hint:'把滑块推到 8 以上，看水流变粗、灯变亮。'},
+  {id:3,short:'逻辑三兄弟',title:'第 3 关 · 逻辑三兄弟',goal:'通关条件：三种逻辑门（NOT/AND/OR）的真值表全部自检通过。',
+   build:buildS3,
+   qa:[
+    {q:'这是什么？',a:'逻辑门：非门、与门、或门——用晶体管拼出的判断机器。'},
+    {q:'它是干什么的？',a:'让电路会「思考」：根据输入的 0 和 1 做出判断。'},
+    {q:'它怎么工作？',a:'几个晶体管巧妙组合，就能实现「唱反调」「都要」「任选」。'},
+    {q:'和红石什么关系？',a:'红石火把=非门；两个拉杆串联=与门；两条线汇入=或门。'},
+    {q:'用在哪儿？',a:'CPU 的每一步计算，都是亿万个逻辑门在开会。'}],
+   hint:'用顶部标签切换三种门，每种都点一次「自我检测」。'},
+  {id:4,short:'万能积木',title:'第 4 关 · 万能积木',goal:'通关条件：用 NAND 分别拼出 NOT 和 AND，并各验证一次。',
+   build:buildS4,
+   qa:[
+    {q:'这是什么？',a:'NAND（与非门）：先做 AND 再取反。'},
+    {q:'它是干什么的？',a:'它是「万能积木」——只用 NAND 就能拼出所有逻辑门！'},
+    {q:'它怎么工作？',a:'两个输入并在一起就是 NOT；NAND 后面再接一个 NOT 就是 AND。'},
+    {q:'和红石什么关系？',a:'MC 里火把+红石就能搭 NAND，所以你能在 MC 里造整台电脑。'},
+    {q:'用在哪儿？',a:'真实芯片工厂最爱 NAND：结构简单、速度快、成本低。'}],
+   hint:'任务一：点 NAND ① 接跳线；任务二：两级 NAND 已经摆好，直接验证。'},
+  {id:5,short:'比特密码',title:'第 5 关 · 比特密码',goal:'通关条件：真值表自检全对，并成功破译 3 个目标数字。',
+   build:buildS5,
+   qa:[
+    {q:'这是什么？',a:'二进制：只用 0 和 1 表示一切数字的方法。'},
+    {q:'它是干什么的？',a:'电路只认识「通/断」，所以计算机用二进制数数。'},
+    {q:'它怎么工作？',a:'每一位的权重翻倍：×8 ×4 ×2 ×1，亮几盏灯就加几。'},
+    {q:'和红石什么关系？',a:'一盏红石灯就是一个比特：亮=1，灭=0。'},
+    {q:'用在哪儿？',a:'文字、图片、音乐、视频……在电脑里全是一串 0 和 1。'}],
+   hint:'目标 13 = 8+4+1，点亮 ×8、×4、×1 三盏灯试试。'}
+];
+</script>
+<script>
+/* ================= 沙盒 ================= */
+const CW=100, CH=100;   // 网格 12×8，SVG 坐标 1200×800
+const SB_TYPES={
+  lever:{name:'拉杆',ins:0,sci:'lever'},
+  clock:{name:'时钟',ins:0,sci:'clock'},
+  diode:{name:'二极管',ins:1,sci:'diode'},
+  not:{name:'非门',ins:1,sci:'not'},
+  and:{name:'与门',ins:2,sci:'and'},
+  or:{name:'或门',ins:2,sci:'or'},
+  nand:{name:'与非门',ins:2,sci:'nand'},
+  xor:{name:'异或门',ins:2,sci:'xor'},
+  lamp:{name:'红石灯',ins:1,sci:'lamp'},
+  door:{name:'门',ins:1,sci:'door'}
+};
+const SB={comps:[],wires:[],sel:null,linkFrom:null,nextId:1,cap:false,clockState:false,stable:true};
+function sbTypeIcon(t){
+  if(t==='lever')return IC.lever; if(t==='clock')return IC.clock; if(t==='diode')return IC.repeater;
+  if(t==='lamp')return IC.lampOff; if(t==='door')return IC.door;
+  return IC[t]||IC.dust;
+}
+function compAt(col,row){ return SB.comps.find(c=>c.col===col&&c.row===row); }
+function portsOf(c){
+  const cx=c.col*CW+50, cy=c.row*CH+50;
+  const def=SB_TYPES[c.type];
+  return {
+    in0:{x:cx-42,y:def.ins===2?cy-14:cy},
+    in1:{x:cx-42,y:cy+14},
+    out:{x:cx+42,y:cy}
+  };
+}
+function mountComp(c){
+  const stage=$('#sb-stage');
+  const el=h('div','comp clickable sb-comp');
+  const def=SB_TYPES[c.type];
+  el.innerHTML='<div class="inner"><div class="face front">'+sbTypeIcon(c.type)+'</div><div class="face back">'+SC[def.sci]+'</div></div><div class="tag">'+def.name+'</div>';
+  el.style.left='calc('+((c.col+0.5)/12*100)+'% - 2.75%)';
+  el.style.top='calc('+((c.row+0.5)/8*100)+'% - 4.125%)';
+  el.style.width='5.5%'; el.style.height='8.25%';
+  el.dataset.id=c.id;
+  el.addEventListener('click',e=>{ e.stopPropagation(); onCompClick(c); });
+  stage.appendChild(el);
+  c.el=el;
+}
+function mountWire(w){
+  const ns='http://www.w3.org/2000/svg';
+  const from=SB.comps.find(c=>c.id===w.from), to=SB.comps.find(c=>c.id===w.to);
+  if(!from||!to)return;
+  const p1=portsOf(from).out, p2=portsOf(to)[w.port===1?'in1':'in0'];
+  const mx=(p1.x+p2.x)/2;
+  const path=document.createElementNS(ns,'path');
+  path.setAttribute('d','M'+p1.x+' '+p1.y+' L'+mx+' '+p1.y+' L'+mx+' '+p2.y+' L'+p2.x+' '+p2.y);
+  if(from.out)path.setAttribute('class','w1');
+  $('#sb-wires').appendChild(path);
+  w.el=path;
+}
+function onCompClick(c){
+  if(SB.sel==='remove'){
+    AU.tick(); removeComp(c); return;
+  }
+  if(SB.sel==='wire'){
+    if(!SB.linkFrom){
+      if(c.type==='lamp'||c.type==='door'){ toast('灯和门是终点，没有输出端。',false); return; }
+      SB.linkFrom=c.id; c.el.classList.add('sel'); AU.tick();
+      toast('已选输出端：'+SB_TYPES[c.type].name+'，再点一个元件的输入。');
+    }else{
+      const from=SB.comps.find(x=>x.id===SB.linkFrom);
+      if(from&&from.el)from.el.classList.remove('sel');
+      if(from===c){ SB.linkFrom=null; return; }
+      const def=SB_TYPES[c.type];
+      if(def.ins===0){ toast('拉杆和时钟只有输出端。',false); SB.linkFrom=null; return; }
+      const used=SB.wires.filter(w=>w.to===c.id).map(w=>w.port);
+      let port=-1;
+      for(let p=0;p<def.ins;p++)if(!used.includes(p)){port=p;break;}
+      if(port<0){ toast('这个元件的输入端已经插满了。',false); SB.linkFrom=null; return; }
+      // 不允许直连成环到自身已在上游的情况（简单防呆：禁止 from 的输入链里含 c）
+      SB.wires.push({from:SB.linkFrom,to:c.id,port});
+      SB.linkFrom=null; AU.click();
+      sbEval(); persistSB(); renderSB(); updateCapList();
+    }
+    return;
+  }
+  if(c.type==='lever'){ c.on=!c.on; AU.click(); sbEval(); persistSB(); renderSB(); return; }
+  toast('用「连线」工具把它接到别的元件上。');
+}
+function removeComp(c){
+  SB.comps=SB.comps.filter(x=>x!==c);
+  SB.wires=SB.wires.filter(w=>w.from!==c.id&&w.to!==c.id);
+  persistSB(); sbEval(); renderSB(); updateCapList();
+}
+function sbEval(){
+  SB.stable=true;
+  SB.comps.forEach(c=>c.out=!!c.out);
+  for(let pass=0;pass<40;pass++){
+    let changed=false;
+    SB.comps.forEach(c=>{
+      const ins=[0,1].map(p=>{
+        const w=SB.wires.find(x=>x.to===c.id&&x.port===p);
+        if(!w)return false;
+        const s=SB.comps.find(z=>z.id===w.from);
+        return s?!!s.out:false;
+      });
+      let o;
+      switch(c.type){
+        case 'lever':o=!!c.on;break;
+        case 'clock':o=!!SB.clockState;break;
+        case 'diode':o=ins[0];break;
+        case 'not':o=!ins[0];break;
+        case 'and':o=ins[0]&&ins[1];break;
+        case 'or':o=ins[0]||ins[1];break;
+        case 'nand':o=!(ins[0]&&ins[1]);break;
+        case 'xor':o=(!!ins[0])!==(!!ins[1]);break;
+        case 'lamp':case 'door':o=ins[0];break;
+        default:o=false;
+      }
+      if(o!==!!c.out){ c.out=o; changed=true; }
+    });
+    if(!changed)return;
+  }
+  SB.stable=false;
+  SB.comps.forEach(c=>{ if(c.type!=='lever'&&c.type!=='clock')c.out=false; });
+  toast('电路在振荡！别把输出接回自己的输入环。',false);
+}
+function renderSB(){
+  const stage=$('#sb-stage');
+  stage.querySelectorAll('.comp').forEach(e=>e.remove());
+  $('#sb-wires').innerHTML='';
+  // 幽灵蓝图
+  if(SB.cap){
+    [[4,2,'xor'],[4,5,'and'],[9,2,'lamp'],[9,5,'lamp']].forEach(([col,row,t])=>{
+      const ex=compAt(col,row);
+      if(ex&&ex.type===t)return;
+      if(ex)return;
+      const g=h('div','comp ghost');
+      g.innerHTML='<div class="inner"><div class="face front">'+sbTypeIcon(t)+'</div></div><div class="tag">'+(t==='lamp'?(row===2?'Sum 灯':'Carry 灯'):SB_TYPES[t].name)+'</div>';
+      g.style.left='calc('+((col+0.5)/12*100)+'% - 2.75%)';
+      g.style.top='calc('+((row+0.5)/8*100)+'% - 4.125%)';
+      g.style.width='5.5%'; g.style.height='8.25%';
+      g.dataset.col=col; g.dataset.row=row;
+      stage.appendChild(g);
+    });
+  }
+  SB.comps.forEach(c=>{
+    mountComp(c);
+    const on=!!c.out;
+    if(c.type==='lamp'){
+      c.el.querySelector('.front').innerHTML=on?IC.lampOn:IC.lampOff;
+      c.el.classList.toggle('sig1',on);
+      c.el.querySelector('.tag').textContent=on?'灯 · 亮':'红石灯';
+    }else if(c.type==='door'){
+      c.el.classList.toggle('sig1',on);
+      c.el.querySelector('.tag').textContent=on?'门 · 开':'门 · 关';
+    }else if(c.type==='lever'){
+      c.el.classList.toggle('sig1',!!c.on);
+      c.el.querySelector('.tag').textContent=c.on?'拉杆 · 开':'拉杆 · 关';
+    }else{
+      c.el.classList.toggle('sig1',on);
+    }
+  });
+  SB.wires.forEach(mountWire);
+  const humOn=SB.comps.some(c=>(c.type==='lamp'&&c.out));
+  AU.hum(humOn);
+}
+function persistSB(){
+  if(SB.cap)return;
+  S.sandbox={comps:SB.comps.map(c=>({id:c.id,type:c.type,col:c.col,row:c.row,on:!!c.on})),
+    wires:SB.wires.map(w=>({from:w.from,to:w.to,port:w.port}))};
+  save();
+}
+function clearSB(){
+  SB.comps=[]; SB.wires=[]; SB.nextId=1; SB.linkFrom=null;
+  persistSB(); sbEval(); renderSB(); updateCapList();
+}
+function loadSandbox(){
+  SB.comps=[]; SB.wires=[]; SB.nextId=1; SB.linkFrom=null;
+  if(S.sandbox){
+    S.sandbox.comps.forEach(c=>{ SB.comps.push({id:c.id,type:c.type,col:c.col,row:c.row,on:!!c.on,out:false}); SB.nextId=Math.max(SB.nextId,c.id+1); });
+    S.sandbox.wires.forEach(w=>SB.wires.push({from:w.from,to:w.to,port:w.port}));
+  }
+}
+function buildHotbar(){
+  const bar=$('#hotbar'); bar.innerHTML='';
+  Object.keys(SB_TYPES).forEach(t=>{
+    const s=h('div','slot'+(SB.sel===t?' on':''));
+    s.innerHTML=sbTypeIcon(t)+'<span>'+SB_TYPES[t].name+'</span>';
+    s.addEventListener('click',()=>{ SB.sel=SB.sel===t?null:t; SB.linkFrom=null; AU.tick(); buildHotbar(); });
+    bar.appendChild(s);
+  });
+  const w=h('div','slot'+(SB.sel==='wire'?' on':''));
+  w.innerHTML=IC.dust+'<span>连线</span>';
+  w.addEventListener('click',()=>{ SB.sel=SB.sel==='wire'?null:'wire'; SB.linkFrom=null; AU.tick(); buildHotbar(); });
+  bar.appendChild(w);
+  const r=h('div','slot'+(SB.sel==='remove'?' on':''));
+  r.innerHTML=IC.torchOff+'<span>拆除</span>';
+  r.addEventListener('click',()=>{ SB.sel=SB.sel==='remove'?null:'remove'; SB.linkFrom=null; AU.tick(); buildHotbar(); });
+  bar.appendChild(r);
+}
+$('#sb-stage').addEventListener('click',e=>{
+  if(e.target.closest('.comp'))return;
+  if(!SB.sel||SB.sel==='wire'||SB.sel==='remove'){
+    if(SB.linkFrom){ const f=SB.comps.find(x=>x.id===SB.linkFrom); if(f&&f.el)f.el.classList.remove('sel'); SB.linkFrom=null; }
+    return;
+  }
+  const rect=$('#sb-stage').getBoundingClientRect();
+  const col=Math.floor((e.clientX-rect.left)/rect.width*12);
+  const row=Math.floor((e.clientY-rect.top)/rect.height*8);
+  if(col<0||col>11||row<0||row>7)return;
+  if(compAt(col,row)){ toast('这个格子已经被占用了。',false); return; }
+  const c={id:SB.nextId++,type:SB.sel,col,row,on:false,out:false};
+  SB.comps.push(c);
+  AU.click();
+  // 放对了幽灵位就移除幽灵
+  $$('#sb-stage .ghost').forEach(g=>{ if(+g.dataset.col===col&&+g.dataset.row===row)g.remove(); });
+  sbEval(); persistSB(); renderSB(); updateCapList();
+});
+
+/* ================= 终极挑战 · 半加器 ================= */
+function ensureCapPanel(){
+  let p=$('#cap-panel');
+  if(p){ p.style.display=SB.cap?'':'none'; return; }
+  p=h('div','paper mt12'); p.id='cap-panel';
+  p.innerHTML='<h3>终极挑战 · 1 位半加器</h3>'
+    +'<p>计算机做加法的最小单元：两个输入 A、B，产出 <b>Sum（和）= A ⊕ B</b>，<b>Carry（进位）= A · B</b>。</p>'
+    +'<ul class="check-list" id="cap-list">'
+    +'<li data-k="lever">放置 2 个拉杆作为输入 A 和 B</li>'
+    +'<li data-k="xor">放置 1 个异或门，并把两个输入接满</li>'
+    +'<li data-k="and">放置 1 个与门，并把两个输入接满</li>'
+    +'<li data-k="lamp">两盏灯：Sum 灯接 XOR 输出，Carry 灯接 AND 输出</li>'
+    +'</ul><div class="row mt8"><button class="mc-btn g" id="cap-test">运行加法测试</button></div>';
+  $('#sb-stage').after(p);
+  p.style.display=SB.cap?'':'none';
+  $('#cap-test').addEventListener('click',runCapTest);
+}
+function wiresInto(id){ return SB.wires.filter(w=>w.to===id); }
+function capStructure(){
+  const levers=SB.comps.filter(c=>c.type==='lever');
+  const xor=SB.comps.find(c=>c.type==='xor'&&wiresInto(c.id).length>=2);
+  const and=SB.comps.find(c=>c.type==='and'&&wiresInto(c.id).length>=2);
+  const lamps=SB.comps.filter(c=>c.type==='lamp');
+  const sumLamp=lamps.find(l=>{ const w=wiresInto(l.id)[0]; return w&&xor&&w.from===xor.id; });
+  const carryLamp=lamps.find(l=>{ const w=wiresInto(l.id)[0]; return w&&and&&w.from===and.id&&(!sumLamp||l.id!==sumLamp.id); });
+  return {levers,xor,and,sumLamp,carryLamp};
+}
+function updateCapList(){
+  const p=$('#cap-panel'); if(!p||!SB.cap)return;
+  const st=capStructure();
+  const mark=(k,ok)=>{ const li=p.querySelector('[data-k="'+k+'"]'); if(li)li.classList.toggle('done',!!ok); };
+  mark('lever',st.levers.length>=2);
+  mark('xor',!!st.xor);
+  mark('and',!!st.and);
+  mark('lamp',!!(st.sumLamp&&st.carryLamp));
+}
+function runCapTest(){
+  if(!SB.cap)return;
+  const st=capStructure();
+  if(!(st.levers.length>=2&&st.xor&&st.and&&st.sumLamp&&st.carryLamp)){
+    toast('结构还不完整，对照清单检查。',false); return;
+  }
+  const A=st.levers[0], B=st.levers[1];
+  const seq=[[0,0,0,0],[0,1,1,0],[1,0,1,0],[1,1,0,1]];
+  toast('自动测试中：依次拨动 A、B 拉杆…');
+  let i=0;
+  const step=()=>{
+    if(i>=seq.length){ victory(); return; }
+    const [a,b,sum,carry]=seq[i];
+    A.on=!!a; B.on=!!b;
+    sbEval(); renderSB();
+    const ok=(!!st.sumLamp.out===!!sum)&&(!!st.carryLamp.out===!!carry);
+    if(!ok){
+      toast('A='+a+' B='+b+' 时应输出 Sum='+sum+' Carry='+carry+'，再检查接线。',false);
+      return;
+    }
+    i++; AU.tick();
+    setTimeout(step,650);
+  };
+  step();
+}
+function victory(){
+  const first=!S.capBest;
+  S.capBest=S.capBest||Date.now(); save();
+  AU.chord(); AU.hum(false);
+  const old=(function(){ try{return JSON.parse(localStorage.getItem('mc_base_forge_save'));}catch(e){return null} })();
+  $('#cert-body').innerHTML='<h2>★ 终 极 认 证 ★</h2>'
+    +'<div style="width:76px;margin:8px auto">'+IC.chip+'</div>'
+    +'<p>兹证明这位造物者，已用红石与逻辑门亲手造出</p>'
+    +'<div class="cname">1 位半加器</div>'
+    +'<p>授予称号</p><h2>终极红石计算机工程师</h2>'
+    +'<p class="small" style="color:#7a5c2e">0+0=0 · 0+1=1 · 1+0=1 · 1+1=10 —— 文明从此有了加法</p>'
+    +(old&&old.victory?'<p class="small" style="color:#3fae2a">检测到你还是「进制造物局」的认证锻造师，双料大师！</p>':'')
+    +'<div class="row mt12" style="justify-content:center"><button class="mc-btn g" id="cert-close">收下证书</button></div>';
+  $('#ov-beam').classList.add('on');
+  $('#cert-close').addEventListener('click',()=>{ $('#ov-beam').classList.remove('on'); });
+  if(first)award('cap');
+}
+function openSandbox(mode){
+  SB.cap=mode==='cap';
+  SB.sel=null; SB.linkFrom=null;
+  show('#screen-sandbox');
+  $('#sb-title').textContent=SB.cap?'终极挑战 · 1 位半加器':'创造模式 · 全功能红石沙盒';
+  $('#sb-goal').textContent=SB.cap
+    ?'幽灵蓝图已标出关键位置：用拉杆、XOR、AND 和两盏灯搭出半加器，然后运行加法测试。'
+    :'自由拼搭：点选零件放入网格，再用「连线」工具把元件接起来。';
+  if(SB.cap){ SB.comps=[]; SB.wires=[]; SB.nextId=1; }
+  else loadSandbox();
+  buildHotbar(); ensureCapPanel(); sbEval(); renderSB(); updateCapList();
+}
+
+/* ================= HUD 事件 ================= */
+function updateHUD(){
+  $('#btn-mute').textContent='音效：'+(AU.muted?'关':'开');
+  $('#btn-lens').textContent='红石透镜：'+(document.body.classList.contains('sci')?'科学':'游戏');
+  const cb=$('#btn-creative');
+  cb.disabled=!unlocked('creative');
+}
+$('#btn-lens').addEventListener('click',()=>{
+  document.body.classList.toggle('sci');
+  S.sci=document.body.classList.contains('sci'); save();
+  AU.click(); updateHUD();
+  toast(document.body.classList.contains('sci')?'透镜开启：看到真实电子元件符号':'透镜关闭：回到红石世界');
+});
+$('#btn-mute').addEventListener('click',()=>{
+  AU.muted=!AU.muted; S.muted=AU.muted; save();
+  if(AU.muted)AU.hum(false); else AU.click();
+  updateHUD();
+});
+$('#btn-bag').addEventListener('click',()=>{
+  AU.tick();
+  const items=Object.keys(ACH).map(k=>{
+    const got=S.ach.includes(k), a=ACH[k];
+    return '<div style="display:flex;gap:10px;align-items:center;padding:6px 0;border-bottom:2px dashed #b8a67a;opacity:'+(got?1:.4)+'">'
+      +'<div style="width:44px;height:44px;flex:none">'+(IC[a.ic]||IC.emerald)+'</div>'
+      +'<div><b style="color:#7a2d0c">'+a.n+'</b><div class="small" style="color:#4a5568">'+a.d+'</div></div>'
+      +'<div style="margin-left:auto">'+(got?'✅':'🔒')+'</div></div>';
+  }).join('');
+  modal('<h3>背包 · 成就收藏</h3><p class="small">已通关 '+S.cleared.length+'/6 关 · 成就 '+S.ach.length+'/'+Object.keys(ACH).length+'</p>'+items
+    +'<div style="text-align:right;margin-top:12px"><button class="mc-btn" onclick="closeModal()">关上背包</button></div>');
+});
+$$('#mode-seg button').forEach(b=>{
+  b.addEventListener('click',()=>{
+    if(b.dataset.m==='creative'){
+      if(!unlocked('creative')){ toast('通关第 5 关「比特密码」后解锁创造沙盒！',false); return; }
+      $$('#mode-seg button').forEach(x=>x.classList.remove('on')); b.classList.add('on');
+      openSandbox();
+    }else{
+      $$('#mode-seg button').forEach(x=>x.classList.remove('on')); b.classList.add('on');
+      AU.hum(false); show('#screen-map'); buildMap();
+    }
+  });
+});
+$('#btn-back').addEventListener('click',()=>{ AU.hum(false); AU.click(); show('#screen-map'); buildMap(); });
+$('#btn-back2').addEventListener('click',()=>{ AU.hum(false); AU.click(); show('#screen-map'); buildMap(); });
+$('#btn-reset-lab').addEventListener('click',()=>{ if(CUR.meta){ AU.click(); openStage(CUR.id); } });
+$('#btn-next').addEventListener('click',()=>{
+  AU.click();
+  const idx=STAGES.findIndex(s=>s.id===CUR.id);
+  if(idx>=0&&idx<STAGES.length-1)openStage(STAGES[idx+1].id);
+  else openSandbox('cap');
+});
+$('#btn-hint').addEventListener('click',()=>{
+  AU.tick();
+  if(!CUR.meta)return;
+  modal('<h3>史蒂夫的提示</h3><p>'+CUR.meta.hint+'</p>'
+    +'<div style="text-align:right;margin-top:12px"><button class="mc-btn" onclick="closeModal()">知道了</button></div>');
+});
+$('#sb-clear').addEventListener('click',()=>{ AU.click(); clearSB(); toast('画布已清空'); });
+$('#btn-cap').addEventListener('click',()=>{
+  AU.click();
+  if(!unlocked('cap')){ toast('通关第 5 关后解锁终极挑战！',false); return; }
+  openSandbox('cap');
+});
+
+/* ================= 启动 ================= */
+loadSave();
+AU.muted=!!S.muted;
+if(S.sci)document.body.classList.add('sci');
+buildMap();
+updateHUD();
+setInterval(()=>{
+  SB.clockState=!SB.clockState;
+  if($('#screen-sandbox').classList.contains('on')&&SB.comps.some(c=>c.type==='clock')){
+    sbEval(); renderSB();
+  }
+},700);
+</script>
+</body>
+</html>
