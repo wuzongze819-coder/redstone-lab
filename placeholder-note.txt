@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>红石实验室</title>
+</head>
+<body>
+本仓库为「红石实验室」三入口合集站点，完整源码见各 html 文件。
+</body>
+</html>
