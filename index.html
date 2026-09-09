@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>红石实验室 · 三入口</title>
+<style>
+:root{
+  --bg:#1e1e1e; --bg2:#313233; --on:#ff2200; --glow:#ff5533; --off:#4a0d00;
+  --paper:#e6d5ac; --gold:#b7791f;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  background:var(--bg); color:#e8e8e8;
+  font-family:"VT323","Minecraftia","Courier New","PingFang SC","Microsoft YaHei",monospace;
+  overflow-x:hidden; user-select:none;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+}
+::-webkit-scrollbar{display:none}
+html{scrollbar-width:none}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.crisp{shape-rendering:crispEdges}
+
+.header{text-align:center;margin-bottom:36px}
+.header h1{font-size:32px;color:#ffd976;text-shadow:2px 2px 0 #000;letter-spacing:2px}
+.header p{font-size:15px;color:#8ec8ff;margin-top:8px}
+
+.door-row{display:flex;gap:32px;flex-wrap:wrap;justify-content:center;padding:0 16px}
+.door{width:280px;background:var(--bg2);border:4px solid #000;box-shadow:inset 0 0 0 3px #4a4a4b;
+  padding:24px;text-align:center;cursor:pointer;transition:transform .2s,box-shadow .2s;position:relative;overflow:hidden}
+.door:hover{transform:translateY(-6px);box-shadow:inset 0 0 0 3px #4a4a4b,0 8px 24px rgba(255,34,0,.15)}
+.door:active{transform:translateY(0)}
+.door-icon{width:96px;height:96px;margin:0 auto 16px}
+.door h2{font-size:22px;color:#fff;text-shadow:2px 2px 0 #000;margin-bottom:6px}
+.door p{font-size:13px;color:#aaa;line-height:1.5}
+
+.trace{width:100%;height:4px;background:var(--off);margin:20px 0;position:relative}
+.trace::after{content:'';position:absolute;inset:0;background:var(--on);filter:drop-shadow(0 0 6px var(--glow));
+  animation:traceFlow 1.2s linear infinite;stroke-dasharray:12 12}
+@keyframes traceFlow{to{transform:translateX(24px)}}
+
+.footer{margin-top:36px;font-size:12px;color:#555}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>红石实验室</h1>
+  <p>三个世界，一个入口 —— 选择你的冒险</p>
+</div>
+
+<div class="door-row">
+  <div class="door" onclick="location.href='creator.html'">
+    <div class="door-icon">
+      <svg viewBox="0 0 16 16" class="crisp" xmlns="http://www.w3.org/2000/svg">
+        <rect width="16" height="16" fill="#5b8c2a"/>
+        <rect y="5" width="16" height="11" fill="#8b5a2b"/>
+        <rect y="5" width="16" height="2" fill="#6b4420"/>
+        <rect x="3" y="1" width="4" height="3" fill="#c78d5e"/>
+        <rect x="9" y="1" width="4" height="3" fill="#c78d5e"/>
+        <rect x="4" y="2" width="2" height="1" fill="#fff"/>
+        <rect x="10" y="2" width="2" height="1" fill="#fff"/>
+        <rect x="5" y="3" width="1" height="1" fill="#3a3ac8"/>
+        <rect x="11" y="3" width="1" height="1" fill="#3a3ac8"/>
+      </svg>
+    </div>
+    <h2>数字造物者</h2>
+    <p>从一颗红石粉出发，点亮二极管、三极管、逻辑门，亲手造出第一台计算机</p>
+    <div style="margin-top:12px;font-size:12px;color:#ff8800">Stage 0 ~ 5 + 半加器终极挑战</div>
+  </div>
+
+  <div class="door" onclick="location.href='base.html'">
+    <div class="door-icon">
+      <svg viewBox="0 0 16 16" class="crisp" xmlns="http://www.w3.org/2000/svg">
+        <rect width="16" height="16" fill="#313233"/>
+        <rect x="2" y="2" width="12" height="12" fill="#e6d5ac"/>
+        <rect x="4" y="4" width="3" height="3" fill="#ff2200"/>
+        <rect x="9" y="4" width="3" height="3" fill="#3a6ea5"/>
+        <rect x="4" y="9" width="3" height="3" fill="#3a6ea5"/>
+        <rect x="9" y="9" width="3" height="3" fill="#ff2200"/>
+      </svg>
+    </div>
+    <h2>进制造物局</h2>
+    <p>从二进制到 36 进制，用拉杆和输入框点亮每一位，造出属于你的进制转换机</p>
+    <div style="margin-top:12px;font-size:12px;color:#ff8800">2 / 8 / 10 / 16 / 36 进制</div>
+  </div>
+
+  <div class="door" onclick="location.href='lab/index.html'">
+    <div class="door-icon">
+      <svg viewBox="0 0 16 16" class="crisp" xmlns="http://www.w3.org/2000/svg">
+        <rect width="16" height="16" fill="#0d0d0d"/>
+        <rect x="6" y="2" width="4" height="4" fill="#ff2200"/>
+        <rect x="7" y="3" width="2" height="2" fill="#ff8800"/>
+        <rect x="7" y="6" width="2" height="6" fill="#8b5a2b"/>
+        <rect x="2" y="12" width="12" height="3" fill="#4a0d00"/>
+        <rect x="2" y="13" width="4" height="1" fill="#ff2200"/>
+        <rect x="10" y="13" width="4" height="1" fill="#ff2200"/>
+      </svg>
+    </div>
+    <h2>红石电路实验室</h2>
+    <p>从一根拉杆到逻辑门 —— 像素游戏里的红石，都是真实的电路科学</p>
+    <div style="margin-top:12px;font-size:12px;color:#ff8800">6 个关卡 + 自由沙盒模式</div>
+  </div>
+</div>
+
+<div class="trace" style="max-width:600px"></div>
+
+<div class="footer">
+  三份存档各自独立 · 成就互有回响 · 点击任意门进入
+</div>
+</body>
+</html>
